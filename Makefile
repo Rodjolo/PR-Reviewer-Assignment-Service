@@ -18,6 +18,18 @@ run:
 test:
 	go test -v ./...
 
+# Запуск E2E тестов
+test-e2e:
+	@echo "Running E2E tests..."
+	@echo "Make sure PostgreSQL is running and database 'pr_reviewer_test' exists"
+	@echo "Or set TEST_DATABASE_URL to use a different database"
+	@go test -v ./test/e2e/... -timeout 30s
+
+# Создание тестовой БД (PostgreSQL)
+test-db-create:
+	@echo "Creating test database..."
+	@psql -U postgres -c "CREATE DATABASE pr_reviewer_test;" || echo "Database already exists or connection error"
+
 # Миграции вверх
 migrate-up:
 	go run ./cmd/migrate -up
@@ -63,9 +75,9 @@ load-test:
 		chmod +x scripts/load_test.sh && \
 		./scripts/load_test.sh; \
 	else \
-		echo "Установка bombardier..."; \
+		echo "Installing bombardier..."; \
 		go install github.com/codesenberg/bombardier@latest; \
-		echo "Запуск тестов..."; \
+		echo "Running tests..."; \
 		bombardier -c 50 -n 20000 http://localhost:8080/stats --print intro,progress,result; \
 	fi
 
@@ -75,9 +87,9 @@ load-test-win:
 
 # Быстрое нагрузочное тестирование (только stats)
 load-test-quick:
-	@echo "Установка bombardier (если нужно)..."
+	@echo "Installing bombardier (if needed)..."
 	@go install github.com/codesenberg/bombardier@latest
-	@echo "Тестирование GET /stats..."
+	@echo "Testing GET /stats..."
 	@bombardier -c 50 -n 20000 http://localhost:8080/stats --print intro,progress,result
 
 # Упрощенное нагрузочное тестирование (PowerShell, без внешних зависимостей)

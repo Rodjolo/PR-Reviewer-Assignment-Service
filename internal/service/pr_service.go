@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 	"math/rand"
 	"time"
 )
@@ -182,11 +182,21 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, fmt.Errorf("failed to get team members: %w", err)
 	}
 
-	// Исключаем автора PR из кандидатов
+	// Создаем набор уже назначенных ревьюверов (исключая того, кого переназначаем)
+	assignedReviewers := make(map[int]struct{})
+	for _, reviewerID := range pr.Reviewers {
+		if reviewerID != oldReviewerID {
+			assignedReviewers[reviewerID] = struct{}{}
+		}
+	}
+
+	// Исключаем автора PR и уже назначенных ревьюверов из кандидатов
 	filteredCandidates := make([]models.User, 0)
 	for _, candidate := range candidates {
 		if candidate.ID != pr.AuthorID {
-			filteredCandidates = append(filteredCandidates, candidate)
+			if _, alreadyAssigned := assignedReviewers[candidate.ID]; !alreadyAssigned {
+				filteredCandidates = append(filteredCandidates, candidate)
+			}
 		}
 	}
 
@@ -211,4 +221,3 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 
 	return updatedPR, nil
 }
-
