@@ -1,0 +1,214 @@
+package service
+
+import (
+	"errors"
+	"fmt"
+	"pr-reviewer-service/internal/models"
+	"pr-reviewer-service/internal/repository"
+	"math/rand"
+	"time"
+)
+
+type PRService struct {
+	prRepo   *repository.PRRepository
+	userRepo *repository.UserRepository
+	teamRepo *repository.TeamRepository
+}
+
+func NewPRService(prRepo *repository.PRRepository, userRepo *repository.UserRepository, teamRepo *repository.TeamRepository) *PRService {
+	return &PRService{
+		prRepo:   prRepo,
+		userRepo: userRepo,
+		teamRepo: teamRepo,
+	}
+}
+
+func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
+	// Проверяем существование автора
+	author, err := s.userRepo.GetByID(authorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get author: %w", err)
+	}
+	if author == nil {
+		return nil, errors.New("author not found")
+	}
+
+	// Получаем команду автора
+	teamName, err := s.teamRepo.GetUserTeam(authorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user team: %w", err)
+	}
+	if teamName == "" {
+		return nil, errors.New("author is not in any team")
+	}
+
+	// Получаем активных пользователей из команды (исключая автора)
+	candidates, err := s.userRepo.GetActiveUsersByTeam(teamName, authorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get team members: %w", err)
+	}
+
+	// Выбираем до 2 случайных ревьюверов
+	reviewers := s.selectRandomReviewers(candidates, 2)
+
+	pr := &models.PR{
+		Title:     title,
+		AuthorID:  authorID,
+		Status:    models.PRStatusOpen,
+		Reviewers: reviewers,
+	}
+
+	if err := s.prRepo.Create(pr); err != nil {
+		return nil, fmt.Errorf("failed to create PR: %w", err)
+	}
+
+	return pr, nil
+}
+
+func (s *PRService) selectRandomReviewers(candidates []models.User, maxCount int) []int {
+	if len(candidates) == 0 {
+		return []int{}
+	}
+
+	count := maxCount
+	if len(candidates) < maxCount {
+		count = len(candidates)
+	}
+
+	// Перемешиваем кандидатов
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	shuffled := make([]models.User, len(candidates))
+	copy(shuffled, candidates)
+	r.Shuffle(len(shuffled), func(i, j int) {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	})
+
+	reviewers := make([]int, 0, count)
+	for i := 0; i < count; i++ {
+		reviewers = append(reviewers, shuffled[i].ID)
+	}
+
+	return reviewers
+}
+
+func (s *PRService) GetPR(id int) (*models.PR, error) {
+	pr, err := s.prRepo.GetByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PR: %w", err)
+	}
+	if pr == nil {
+		return nil, errors.New("PR not found")
+	}
+	return pr, nil
+}
+
+func (s *PRService) GetPRsByUserID(userID int) ([]models.PR, error) {
+	prs, err := s.prRepo.GetByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PRs: %w", err)
+	}
+	return prs, nil
+}
+
+func (s *PRService) GetAllPRs() ([]models.PR, error) {
+	prs, err := s.prRepo.GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PRs: %w", err)
+	}
+	return prs, nil
+}
+
+func (s *PRService) MergePR(id int) (*models.PR, error) {
+	pr, err := s.prRepo.GetByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PR: %w", err)
+	}
+	if pr == nil {
+		return nil, errors.New("PR not found")
+	}
+
+	// Идемпотентность: если PR уже мержен, просто возвращаем его
+	if pr.Status == models.PRStatusMerged {
+		return pr, nil
+	}
+
+	if err := s.prRepo.UpdateStatus(id, models.PRStatusMerged); err != nil {
+		return nil, fmt.Errorf("failed to merge PR: %w", err)
+	}
+
+	pr.Status = models.PRStatusMerged
+	return pr, nil
+}
+
+func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, error) {
+	// Проверяем существование PR
+	pr, err := s.prRepo.GetByID(prID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PR: %w", err)
+	}
+	if pr == nil {
+		return nil, errors.New("PR not found")
+	}
+
+	// Проверяем статус PR
+	if pr.Status == models.PRStatusMerged {
+		return nil, errors.New("cannot reassign reviewer: PR is already merged")
+	}
+
+	// Проверяем, что старый ревьювер действительно назначен на этот PR
+	found := false
+	for _, reviewerID := range pr.Reviewers {
+		if reviewerID == oldReviewerID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, errors.New("old reviewer is not assigned to this PR")
+	}
+
+	// Получаем команду старого ревьювера
+	teamName, err := s.teamRepo.GetUserTeam(oldReviewerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get reviewer team: %w", err)
+	}
+	if teamName == "" {
+		return nil, errors.New("reviewer is not in any team")
+	}
+
+	// Получаем активных пользователей из команды старого ревьювера (исключая его самого и автора PR)
+	candidates, err := s.userRepo.GetActiveUsersByTeam(teamName, oldReviewerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get team members: %w", err)
+	}
+
+	// Исключаем автора PR из кандидатов
+	filteredCandidates := make([]models.User, 0)
+	for _, candidate := range candidates {
+		if candidate.ID != pr.AuthorID {
+			filteredCandidates = append(filteredCandidates, candidate)
+		}
+	}
+
+	if len(filteredCandidates) == 0 {
+		return nil, errors.New("no available reviewers in the team")
+	}
+
+	// Выбираем случайного нового ревьювера
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	newReviewerID := filteredCandidates[r.Intn(len(filteredCandidates))].ID
+
+	// Выполняем переназначение
+	if err := s.prRepo.ReassignReviewer(prID, oldReviewerID, newReviewerID); err != nil {
+		return nil, fmt.Errorf("failed to reassign reviewer: %w", err)
+	}
+
+	// Возвращаем обновленный PR
+	updatedPR, err := s.prRepo.GetByID(prID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated PR: %w", err)
+	}
+
+	return updatedPR, nil
+}
+

@@ -1,0 +1,430 @@
+openapi: 3.0.3
+info:
+  title: PR Reviewer Service API
+  version: 1.0.0
+  description: Сервис назначения ревьюеров для Pull Request'ов
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /prs:
+    post:
+      summary: Создать Pull Request
+      operationId: createPR
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePRRequest'
+      responses:
+        '201':
+          description: PR создан успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PR'
+        '400':
+          description: Неверный запрос
+        '404':
+          description: Автор не найден
+        '500':
+          description: Внутренняя ошибка сервера
+    get:
+      summary: Получить список PR'ов
+      operationId: listPRs
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+          description: Фильтр по ID пользователя (автор или ревьюер)
+      responses:
+        '200':
+          description: Список PR'ов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PR'
+
+  /prs/{id}:
+    get:
+      summary: Получить PR по ID
+      operationId: getPR
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PR найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PR'
+        '404':
+          description: PR не найден
+
+  /prs/{id}/reassign:
+    patch:
+      summary: Переназначить ревьювера
+      operationId: reassignReviewer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReassignRequest'
+      responses:
+        '200':
+          description: Ревьювер переназначен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PR'
+        '400':
+          description: Неверный запрос
+        '404':
+          description: PR или ревьювер не найден
+        '409':
+          description: PR уже мержен, изменения запрещены
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /prs/{id}/merge:
+    post:
+      summary: Мержить PR
+      operationId: mergePR
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PR успешно мержен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PR'
+        '404':
+          description: PR не найден
+        '409':
+          description: PR уже мержен
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /teams:
+    post:
+      summary: Создать команду
+      operationId: createTeam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamRequest'
+      responses:
+        '201':
+          description: Команда создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: Неверный запрос
+        '409':
+          description: Команда уже существует
+    get:
+      summary: Получить список команд
+      operationId: listTeams
+      responses:
+        '200':
+          description: Список команд
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+
+  /teams/{name}:
+    get:
+      summary: Получить команду по имени
+      operationId: getTeam
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Команда найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '404':
+          description: Команда не найдена
+
+  /teams/{name}/members:
+    post:
+      summary: Добавить участника в команду
+      operationId: addTeamMember
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '200':
+          description: Участник добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: Неверный запрос
+        '404':
+          description: Команда или пользователь не найден
+    delete:
+      summary: Удалить участника из команды
+      operationId: removeTeamMember
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Участник удален
+        '404':
+          description: Команда или участник не найден
+
+  /users:
+    post:
+      summary: Создать пользователя
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Неверный запрос
+    get:
+      summary: Получить список пользователей
+      operationId: listUsers
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/{id}:
+    get:
+      summary: Получить пользователя по ID
+      operationId: getUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+    patch:
+      summary: Обновить пользователя
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Пользователь обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Неверный запрос
+        '404':
+          description: Пользователь не найден
+
+  /stats:
+    get:
+      summary: Получить статистику
+      operationId: getStats
+      responses:
+        '200':
+          description: Статистика
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        is_active:
+          type: boolean
+
+    Team:
+      type: object
+      properties:
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+
+    PR:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author_id:
+          type: integer
+        status:
+          type: string
+          enum: [OPEN, MERGED]
+        reviewers:
+          type: array
+          items:
+            type: integer
+          maxItems: 2
+
+    CreatePRRequest:
+      type: object
+      required:
+        - title
+        - author_id
+      properties:
+        title:
+          type: string
+        author_id:
+          type: integer
+
+    ReassignRequest:
+      type: object
+      required:
+        - old_reviewer_id
+      properties:
+        old_reviewer_id:
+          type: integer
+
+    CreateTeamRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    AddMemberRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: integer
+
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        is_active:
+          type: boolean
+          default: true
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        is_active:
+          type: boolean
+
+    Stats:
+      type: object
+      properties:
+        total_users:
+          type: integer
+        active_users:
+          type: integer
+        total_teams:
+          type: integer
+        total_prs:
+          type: integer
+        open_prs:
+          type: integer
+        merged_prs:
+          type: integer
+

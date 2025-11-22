@@ -1,0 +1,52 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Swagger generated files (optional - можно закоммитить для удобства)
+# docs/docs.go
+# docs/swagger.json
+# docs/swagger.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Load test results
+load_test_results.txt
+*.loadtest
+
