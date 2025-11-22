@@ -61,31 +61,59 @@ func (r *TeamRepository) GetByName(name string) (*models.Team, error) {
 }
 
 func (r *TeamRepository) GetAll() ([]models.Team, error) {
-	rows, err := r.db.Query("SELECT name FROM teams ORDER BY name")
+	// Используем JOIN для загрузки всех данных за один запрос
+	rows, err := r.db.Query(`
+		SELECT t.name, u.id, u.name, u.is_active
+		FROM teams t
+		LEFT JOIN team_members tm ON t.name = tm.team_name
+		LEFT JOIN users u ON tm.user_id = u.id
+		ORDER BY t.name, u.id
+	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var teams []models.Team
+	teamsMap := make(map[string]*models.Team)
 	for rows.Next() {
-		var team models.Team
-		if err := rows.Scan(&team.Name); err != nil {
+		var teamName string
+		var userID sql.NullInt64
+		var userName sql.NullString
+		var isActive sql.NullBool
+
+		if err := rows.Scan(&teamName, &userID, &userName, &isActive); err != nil {
 			return nil, err
 		}
-		teams = append(teams, team)
-	}
-	
-	// Загружаем участников для каждой команды
-	for i := range teams {
-		members, err := r.getTeamMembers(teams[i].Name)
-		if err != nil {
-			return nil, err
+
+		// Создаем команду, если её еще нет
+		if _, exists := teamsMap[teamName]; !exists {
+			teamsMap[teamName] = &models.Team{
+				Name:    teamName,
+				Members: []models.User{},
+			}
 		}
-		teams[i].Members = members
+
+		// Добавляем участника, если он есть
+		if userID.Valid {
+			teamsMap[teamName].Members = append(teamsMap[teamName].Members, models.User{
+				ID:       int(userID.Int64),
+				Name:     userName.String,
+				IsActive: isActive.Bool,
+			})
+		}
 	}
-	
-	return teams, rows.Err()
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Преобразуем map в slice
+	teams := make([]models.Team, 0, len(teamsMap))
+	for _, team := range teamsMap {
+		teams = append(teams, *team)
+	}
+
+	return teams, nil
 }
 
 func (r *TeamRepository) getTeamMembers(teamName string) ([]models.User, error) {

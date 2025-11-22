@@ -28,32 +28,32 @@ fi
 
 echo "1. Тестирование GET /stats (статистика)"
 echo "----------------------------------------"
-bombardier -c $CONCURRENT -n $REQUESTS "$API_URL/stats" \
-    --print r --print p --print h
+bombardier -c "$CONCURRENT" -n "$REQUESTS" "$API_URL/stats" \
+    --print intro,progress,result
 echo ""
 
 echo "2. Тестирование GET /users (список пользователей)"
 echo "----------------------------------------"
-bombardier -c $CONCURRENT -n $REQUESTS "$API_URL/users" \
-    --print r --print p --print h
+bombardier -c "$CONCURRENT" -n "$REQUESTS" "$API_URL/users" \
+    --print intro,progress,result
 echo ""
 
 echo "3. Тестирование GET /teams (список команд)"
 echo "----------------------------------------"
-bombardier -c $CONCURRENT -n $REQUESTS "$API_URL/teams" \
-    --print r --print p --print h
+bombardier -c "$CONCURRENT" -n "$REQUESTS" "$API_URL/teams" \
+    --print intro,progress,result
 echo ""
 
 echo "4. Тестирование GET /prs (список PR)"
 echo "----------------------------------------"
-bombardier -c $CONCURRENT -n $REQUESTS "$API_URL/prs" \
-    --print r --print p --print h
+bombardier -c "$CONCURRENT" -n "$REQUESTS" "$API_URL/prs" \
+    --print intro,progress,result
 echo ""
 
 echo "5. Тестирование GET /prs?user_id=1 (PR по пользователю)"
 echo "----------------------------------------"
-bombardier -c $CONCURRENT -n $REQUESTS "$API_URL/prs?user_id=1" \
-    --print r --print p --print h
+bombardier -c "$CONCURRENT" -n "$REQUESTS" "$API_URL/prs?user_id=1" \
+    --print intro,progress,result
 echo ""
 
 echo "=========================================="

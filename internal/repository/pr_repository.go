@@ -80,65 +80,110 @@ func (r *PRRepository) GetByID(id int) (*models.PR, error) {
 }
 
 func (r *PRRepository) GetByUserID(userID int) ([]models.PR, error) {
+	// Используем JOIN для загрузки всех данных за один запрос
 	rows, err := r.db.Query(`
-		SELECT DISTINCT pr.id, pr.title, pr.author_id, pr.status
+		SELECT DISTINCT pr.id, pr.title, pr.author_id, pr.status, prr.reviewer_id
 		FROM pull_requests pr
 		LEFT JOIN pr_reviewers prr ON pr.id = prr.pr_id
 		WHERE pr.author_id = $1 OR prr.reviewer_id = $1
-		ORDER BY pr.id
+		ORDER BY pr.id, prr.reviewer_id
 	`, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var prs []models.PR
+	prsMap := make(map[int]*models.PR)
 	for rows.Next() {
-		var pr models.PR
-		if err := rows.Scan(&pr.ID, &pr.Title, &pr.AuthorID, &pr.Status); err != nil {
+		var prID, authorID int
+		var title, status string
+		var reviewerID sql.NullInt64
+
+		if err := rows.Scan(&prID, &title, &authorID, &status, &reviewerID); err != nil {
 			return nil, err
 		}
-		prs = append(prs, pr)
-	}
 
-	// Загружаем ревьюверов для каждого PR
-	for i := range prs {
-		reviewers, err := r.getReviewers(prs[i].ID)
-		if err != nil {
-			return nil, err
+		// Создаем PR, если его еще нет
+		if _, exists := prsMap[prID]; !exists {
+			prsMap[prID] = &models.PR{
+				ID:        prID,
+				Title:     title,
+				AuthorID:  authorID,
+				Status:    models.PRStatus(status),
+				Reviewers: []int{},
+			}
 		}
-		prs[i].Reviewers = reviewers
+
+		// Добавляем ревьювера, если он есть
+		if reviewerID.Valid {
+			prsMap[prID].Reviewers = append(prsMap[prID].Reviewers, int(reviewerID.Int64))
+		}
 	}
 
-	return prs, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Преобразуем map в slice
+	prs := make([]models.PR, 0, len(prsMap))
+	for _, pr := range prsMap {
+		prs = append(prs, *pr)
+	}
+
+	return prs, nil
 }
 
 func (r *PRRepository) GetAll() ([]models.PR, error) {
-	rows, err := r.db.Query("SELECT id, title, author_id, status FROM pull_requests ORDER BY id")
+	// Используем JOIN для загрузки всех данных за один запрос
+	rows, err := r.db.Query(`
+		SELECT pr.id, pr.title, pr.author_id, pr.status, prr.reviewer_id
+		FROM pull_requests pr
+		LEFT JOIN pr_reviewers prr ON pr.id = prr.pr_id
+		ORDER BY pr.id, prr.reviewer_id
+	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var prs []models.PR
+	prsMap := make(map[int]*models.PR)
 	for rows.Next() {
-		var pr models.PR
-		if err := rows.Scan(&pr.ID, &pr.Title, &pr.AuthorID, &pr.Status); err != nil {
+		var prID, authorID int
+		var title, status string
+		var reviewerID sql.NullInt64
+
+		if err := rows.Scan(&prID, &title, &authorID, &status, &reviewerID); err != nil {
 			return nil, err
 		}
-		prs = append(prs, pr)
-	}
 
-	// Загружаем ревьюверов для каждого PR
-	for i := range prs {
-		reviewers, err := r.getReviewers(prs[i].ID)
-		if err != nil {
-			return nil, err
+		// Создаем PR, если его еще нет
+		if _, exists := prsMap[prID]; !exists {
+			prsMap[prID] = &models.PR{
+				ID:        prID,
+				Title:     title,
+				AuthorID:  authorID,
+				Status:    models.PRStatus(status),
+				Reviewers: []int{},
+			}
 		}
-		prs[i].Reviewers = reviewers
+
+		// Добавляем ревьювера, если он есть
+		if reviewerID.Valid {
+			prsMap[prID].Reviewers = append(prsMap[prID].Reviewers, int(reviewerID.Int64))
+		}
 	}
 
-	return prs, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Преобразуем map в slice
+	prs := make([]models.PR, 0, len(prsMap))
+	for _, pr := range prsMap {
+		prs = append(prs, *pr)
+	}
+
+	return prs, nil
 }
 
 func (r *PRRepository) getReviewers(prID int) ([]int, error) {
@@ -200,50 +245,29 @@ func (r *PRRepository) ReassignReviewer(prID int, oldReviewerID int, newReviewer
 }
 
 func (r *PRRepository) GetStats() (map[string]int, error) {
+	// Используем один запрос с подзапросами для получения всей статистики
 	stats := make(map[string]int)
-	var count int
-
-	// Общее количество пользователей
-	err := r.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	
+	err := r.db.QueryRow(`
+		SELECT 
+			(SELECT COUNT(*) FROM users) as total_users,
+			(SELECT COUNT(*) FROM users WHERE is_active = true) as active_users,
+			(SELECT COUNT(*) FROM teams) as total_teams,
+			(SELECT COUNT(*) FROM pull_requests) as total_prs,
+			(SELECT COUNT(*) FROM pull_requests WHERE status = 'OPEN') as open_prs,
+			(SELECT COUNT(*) FROM pull_requests WHERE status = 'MERGED') as merged_prs
+	`).Scan(
+		&stats["total_users"],
+		&stats["active_users"],
+		&stats["total_teams"],
+		&stats["total_prs"],
+		&stats["open_prs"],
+		&stats["merged_prs"],
+	)
+	
 	if err != nil {
 		return nil, err
 	}
-	stats["total_users"] = count
-
-	// Активные пользователи
-	err = r.db.QueryRow("SELECT COUNT(*) FROM users WHERE is_active = true").Scan(&count)
-	if err != nil {
-		return nil, err
-	}
-	stats["active_users"] = count
-
-	// Общее количество команд
-	err = r.db.QueryRow("SELECT COUNT(*) FROM teams").Scan(&count)
-	if err != nil {
-		return nil, err
-	}
-	stats["total_teams"] = count
-
-	// Общее количество PR
-	err = r.db.QueryRow("SELECT COUNT(*) FROM pull_requests").Scan(&count)
-	if err != nil {
-		return nil, err
-	}
-	stats["total_prs"] = count
-
-	// Открытые PR
-	err = r.db.QueryRow("SELECT COUNT(*) FROM pull_requests WHERE status = 'OPEN'").Scan(&count)
-	if err != nil {
-		return nil, err
-	}
-	stats["open_prs"] = count
-
-	// Мерженные PR
-	err = r.db.QueryRow("SELECT COUNT(*) FROM pull_requests WHERE status = 'MERGED'").Scan(&count)
-	if err != nil {
-		return nil, err
-	}
-	stats["merged_prs"] = count
 
 	return stats, nil
 }

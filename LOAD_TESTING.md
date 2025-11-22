@@ -40,7 +40,7 @@ make load-test-quick
 
 **Ручной запуск:**
 ```bash
-bombardier -c 50 -n 20000 http://localhost:8080/stats --print r --print p --print h
+bombardier -c 50 -n 20000 http://localhost:8080/stats --print intro,progress,result
 ```
 
 ### 2. Упрощенный вариант (PowerShell, без внешних зависимостей)

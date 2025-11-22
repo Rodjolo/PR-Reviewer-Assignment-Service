@@ -18,6 +18,12 @@ func New(connectionString string) (*DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// Настройка пула соединений для высокой нагрузки
+	db.SetMaxOpenConns(25)                 // Максимум открытых соединений
+	db.SetMaxIdleConns(5)                  // Максимум неактивных соединений
+	db.SetConnMaxLifetime(5 * 60 * 1000000000) // 5 минут
+	db.SetConnMaxIdleTime(10 * 60 * 1000000000) // 10 минут
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
