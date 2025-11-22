@@ -29,6 +29,20 @@ go.work
 # Environment variables
 .env
 .env.local
+.env.*
+!.env.example
+*.env
+!*.env.example
+
+# Secrets and credentials
+secrets/
+*.key
+*.pem
+*.cert
+*.p12
+*.jks
+credentials.json
+config.local.*
 
 # Database
 *.db

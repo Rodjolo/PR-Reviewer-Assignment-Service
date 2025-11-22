@@ -135,8 +135,22 @@ make run
 
 ## Переменные окружения
 
-- `DATABASE_URL` - строка подключения к PostgreSQL (по умолчанию: `postgres://postgres:postgres@localhost:5432/pr_reviewer?sslmode=disable`)
+**ВАЖНО:** Для безопасности используйте переменные окружения или файл `.env`. Не храните пароли в коде!
+
+Создайте файл `.env` на основе `.env.example`:
+```bash
+cp .env.example .env
+# Отредактируйте .env и укажите реальные пароли
+```
+
+Переменные окружения:
+- `DATABASE_URL` - строка подключения к PostgreSQL (обязательно!)
+  - Формат: `postgres://username:password@host:port/database?sslmode=disable`
+  - Пример: `postgres://postgres:your_password@localhost:5432/pr_reviewer?sslmode=disable`
 - `PORT` - порт для HTTP сервера (по умолчанию: `8080`)
+- `POSTGRES_USER` - пользователь PostgreSQL (для docker-compose)
+- `POSTGRES_PASSWORD` - пароль PostgreSQL (для docker-compose)
+- `POSTGRES_DB` - имя базы данных (для docker-compose)
 
 ## Makefile команды
 

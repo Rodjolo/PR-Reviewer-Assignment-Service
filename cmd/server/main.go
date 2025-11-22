@@ -17,7 +17,7 @@ func main() {
 	// Получаем строку подключения к БД
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://postgres:postgres@localhost:5432/pr_reviewer?sslmode=disable"
+		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
 	// Подключаемся к БД

@@ -22,7 +22,7 @@ func main() {
 
 	connectionString := os.Getenv("DATABASE_URL")
 	if connectionString == "" {
-		connectionString = "postgres://postgres:postgres@localhost:5432/pr_reviewer?sslmode=disable"
+		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
 	db, err := sql.Open("postgres", connectionString)

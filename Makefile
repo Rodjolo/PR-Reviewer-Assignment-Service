@@ -1,7 +1,8 @@
 .PHONY: build run test migrate-up migrate-down docker-up docker-down clean
 
 # Переменные
-DB_URL ?= postgres://postgres:postgres@localhost:5432/pr_reviewer?sslmode=disable
+# Используйте переменные окружения или создайте .env файл
+# DB_URL должен быть установлен через переменную окружения DATABASE_URL
 PORT ?= 8080
 
 # Сборка приложения
