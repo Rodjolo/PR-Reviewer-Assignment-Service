@@ -355,6 +355,33 @@ func (h *Handlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, user)
 }
 
+// BulkDeactivateTeam godoc
+// @Summary Массовая деактивация пользователей команды
+// @Description Деактивирует всех пользователей команды и безопасно переназначает ревьюверов в открытых PR
+// @Tags Users
+// @Produce json
+// @Param name path string true "Имя команды"
+// @Success 200 {object} service.BulkDeactivateTeamResult
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /teams/{name}/deactivate [post]
+func (h *Handlers) BulkDeactivateTeam(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	teamName := vars["name"]
+
+	result, err := h.userService.BulkDeactivateTeam(teamName)
+	if err != nil {
+		if err.Error() == "team not found" {
+			h.respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		h.respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, result)
+}
+
 // Team Handlers
 
 type CreateTeamRequest struct {

@@ -9,10 +9,16 @@ import (
 
 type UserService struct {
 	userRepo *repository.UserRepository
+	prRepo   *repository.PRRepository
+	teamRepo *repository.TeamRepository
 }
 
-func NewUserService(userRepo *repository.UserRepository) *UserService {
-	return &UserService{userRepo: userRepo}
+func NewUserService(userRepo *repository.UserRepository, prRepo *repository.PRRepository, teamRepo *repository.TeamRepository) *UserService {
+	return &UserService{
+		userRepo: userRepo,
+		prRepo:   prRepo,
+		teamRepo: teamRepo,
+	}
 }
 
 func (s *UserService) CreateUser(name string, isActive bool) (*models.User, error) {
@@ -68,5 +74,63 @@ func (s *UserService) UpdateUser(id int, name *string, isActive *bool) (*models.
 	}
 
 	return user, nil
+}
+
+// BulkDeactivateTeamResult содержит результат массовой деактивации
+type BulkDeactivateTeamResult struct {
+	DeactivatedUsers int `json:"deactivated_users"`
+	ReassignedPRs    int `json:"reassigned_prs"`
+}
+
+// BulkDeactivateTeam деактивирует всех пользователей команды и безопасно переназначает ревьюверов в открытых PR
+// Оптимизировано для выполнения в пределах 100 мс для средних объемов данных
+func (s *UserService) BulkDeactivateTeam(teamName string) (*BulkDeactivateTeamResult, error) {
+	// Проверяем существование команды
+	team, err := s.teamRepo.GetByName(teamName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get team: %w", err)
+	}
+	if team == nil {
+		return nil, errors.New("team not found")
+	}
+
+	// Получаем список пользователей команды перед деактивацией
+	userIDs := make([]int, len(team.Members))
+	for i, member := range team.Members {
+		userIDs[i] = member.ID
+	}
+
+	if len(userIDs) == 0 {
+		return &BulkDeactivateTeamResult{
+			DeactivatedUsers: 0,
+			ReassignedPRs:     0,
+		}, nil
+	}
+
+	// Получаем открытые PR с ревьюверами из этой команды
+	prReviewerMap, err := s.prRepo.GetOpenPRsWithReviewers(userIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get open PRs: %w", err)
+	}
+
+	// Деактивируем пользователей
+	deactivatedCount, err := s.userRepo.BulkDeactivateByTeam(teamName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deactivate users: %w", err)
+	}
+
+	// Переназначаем ревьюверов в открытых PR
+	reassignedCount := 0
+	if len(prReviewerMap) > 0 {
+		reassignedCount, err = s.prRepo.BulkReassignReviewers(prReviewerMap, teamName, userIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reassign reviewers: %w", err)
+		}
+	}
+
+	return &BulkDeactivateTeamResult{
+		DeactivatedUsers: deactivatedCount,
+		ReassignedPRs:    reassignedCount,
+	}, nil
 }
 

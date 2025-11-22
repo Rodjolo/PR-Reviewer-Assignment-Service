@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 	"pr-reviewer-service/internal/models"
+
+	"github.com/lib/pq"
 )
 
 type TeamRepository struct {
@@ -20,7 +22,7 @@ func (r *TeamRepository) Create(team *models.Team) error {
 
 func (r *TeamRepository) GetByName(name string) (*models.Team, error) {
 	team := &models.Team{Name: name}
-	
+
 	rows, err := r.db.Query(`
 		SELECT u.id, u.name, u.is_active 
 		FROM users u
@@ -41,11 +43,11 @@ func (r *TeamRepository) GetByName(name string) (*models.Team, error) {
 		}
 		members = append(members, user)
 	}
-	
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	// Проверяем существование команды
 	var exists bool
 	err = r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM teams WHERE name = $1)", name).Scan(&exists)
@@ -55,65 +57,75 @@ func (r *TeamRepository) GetByName(name string) (*models.Team, error) {
 	if !exists {
 		return nil, nil
 	}
-	
+
 	team.Members = members
 	return team, nil
 }
 
 func (r *TeamRepository) GetAll() ([]models.Team, error) {
-	// Используем JOIN для загрузки всех данных за один запрос
-	rows, err := r.db.Query(`
-		SELECT t.name, u.id, u.name, u.is_active
-		FROM teams t
-		LEFT JOIN team_members tm ON t.name = tm.team_name
-		LEFT JOIN users u ON tm.user_id = u.id
-		ORDER BY t.name, u.id
-	`)
+	// Оптимизированный подход: сначала получаем команды, потом участников
+	// Это быстрее при большом количестве данных
+	teamRows, err := r.db.Query("SELECT name FROM teams ORDER BY name")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer teamRows.Close()
 
-	teamsMap := make(map[string]*models.Team)
-	for rows.Next() {
-		var teamName string
-		var userID sql.NullInt64
-		var userName sql.NullString
-		var isActive sql.NullBool
-
-		if err := rows.Scan(&teamName, &userID, &userName, &isActive); err != nil {
+	var teams []models.Team
+	for teamRows.Next() {
+		var team models.Team
+		if err := teamRows.Scan(&team.Name); err != nil {
 			return nil, err
 		}
-
-		// Создаем команду, если её еще нет
-		if _, exists := teamsMap[teamName]; !exists {
-			teamsMap[teamName] = &models.Team{
-				Name:    teamName,
-				Members: []models.User{},
-			}
-		}
-
-		// Добавляем участника, если он есть
-		if userID.Valid {
-			teamsMap[teamName].Members = append(teamsMap[teamName].Members, models.User{
-				ID:       int(userID.Int64),
-				Name:     userName.String,
-				IsActive: isActive.Bool,
-			})
-		}
+		teams = append(teams, team)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err := teamRows.Err(); err != nil {
 		return nil, err
 	}
 
-	// Преобразуем map в slice
-	teams := make([]models.Team, 0, len(teamsMap))
-	for _, team := range teamsMap {
-		teams = append(teams, *team)
+	// Загружаем участников для всех команд одним запросом
+	if len(teams) == 0 {
+		return teams, nil
 	}
 
-	return teams, nil
+	teamNames := make([]string, len(teams))
+	for i, team := range teams {
+		teamNames[i] = team.Name
+	}
+
+	memberRows, err := r.db.Query(`
+		SELECT tm.team_name, u.id, u.name, u.is_active
+		FROM team_members tm
+		INNER JOIN users u ON tm.user_id = u.id
+		WHERE tm.team_name = ANY($1::text[])
+		ORDER BY tm.team_name, u.id
+	`, pq.Array(teamNames))
+	if err != nil {
+		return nil, err
+	}
+	defer memberRows.Close()
+
+	// Создаем map для быстрого доступа
+	teamsMap := make(map[string]*models.Team)
+	for i := range teams {
+		teams[i].Members = []models.User{}
+		teamsMap[teams[i].Name] = &teams[i]
+	}
+
+	// Заполняем участников
+	for memberRows.Next() {
+		var teamName string
+		var user models.User
+		if err := memberRows.Scan(&teamName, &user.ID, &user.Name, &user.IsActive); err != nil {
+			return nil, err
+		}
+		if team, exists := teamsMap[teamName]; exists {
+			team.Members = append(team.Members, user)
+		}
+	}
+
+	return teams, memberRows.Err()
 }
 
 func (r *TeamRepository) getTeamMembers(teamName string) ([]models.User, error) {
@@ -167,4 +179,3 @@ func (r *TeamRepository) GetUserTeam(userID int) (string, error) {
 	}
 	return teamName, err
 }
-

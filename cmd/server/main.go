@@ -33,7 +33,7 @@ func main() {
 	prRepo := repository.NewPRRepository(db.DB)
 
 	// Инициализируем сервисы
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, prRepo, teamRepo)
 	teamService := service.NewTeamService(teamRepo, userRepo)
 	prService := service.NewPRService(prRepo, userRepo, teamRepo)
 	statsService := service.NewStatsService(prRepo)

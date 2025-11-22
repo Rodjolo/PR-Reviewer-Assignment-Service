@@ -66,7 +66,7 @@ load-test:
 		echo "Установка bombardier..."; \
 		go install github.com/codesenberg/bombardier@latest; \
 		echo "Запуск тестов..."; \
-		bombardier -c 50 -n 20000 http://localhost:8080/stats --print r --print p --print h; \
+		bombardier -c 50 -n 20000 http://localhost:8080/stats --print intro,progress,result; \
 	fi
 
 # Нагрузочное тестирование (Windows PowerShell)
@@ -78,7 +78,7 @@ load-test-quick:
 	@echo "Установка bombardier (если нужно)..."
 	@go install github.com/codesenberg/bombardier@latest
 	@echo "Тестирование GET /stats..."
-	@bombardier -c 50 -n 20000 http://localhost:8080/stats --print r --print p --print h
+	@bombardier -c 50 -n 20000 http://localhost:8080/stats --print intro,progress,result
 
 # Упрощенное нагрузочное тестирование (PowerShell, без внешних зависимостей)
 load-test-simple:

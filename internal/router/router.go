@@ -29,6 +29,7 @@ func NewRouter(h *handlers.Handlers) *mux.Router {
 	r.HandleFunc("/teams/{name}", h.GetTeam).Methods("GET")
 	r.HandleFunc("/teams/{name}/members", h.AddTeamMember).Methods("POST")
 	r.HandleFunc("/teams/{name}/members", h.RemoveTeamMember).Methods("DELETE")
+	r.HandleFunc("/teams/{name}/deactivate", h.BulkDeactivateTeam).Methods("POST")
 
 	// Stats route
 	r.HandleFunc("/stats", h.GetStats).Methods("GET")

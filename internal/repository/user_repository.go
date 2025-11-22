@@ -84,3 +84,25 @@ func (r *UserRepository) GetActiveUsersByTeam(teamName string, excludeUserID int
 	return users, rows.Err()
 }
 
+// BulkDeactivateByTeam деактивирует всех пользователей команды
+// Возвращает количество деактивированных пользователей
+func (r *UserRepository) BulkDeactivateByTeam(teamName string) (int, error) {
+	result, err := r.db.Exec(`
+		UPDATE users 
+		SET is_active = false 
+		WHERE id IN (
+			SELECT user_id FROM team_members WHERE team_name = $1
+		) AND is_active = true
+	`, teamName)
+	if err != nil {
+		return 0, err
+	}
+	
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	
+	return int(rowsAffected), nil
+}
+
