@@ -3,8 +3,9 @@ package service
 import (
 	"errors"
 	"fmt"
-	"pr-reviewer-service/internal/models"
-	"pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/dto"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 )
 
 type UserService struct {
@@ -76,15 +77,9 @@ func (s *UserService) UpdateUser(id int, name *string, isActive *bool) (*models.
 	return user, nil
 }
 
-// BulkDeactivateTeamResult содержит результат массовой деактивации
-type BulkDeactivateTeamResult struct {
-	DeactivatedUsers int `json:"deactivated_users"`
-	ReassignedPRs    int `json:"reassigned_prs"`
-}
-
 // BulkDeactivateTeam деактивирует всех пользователей команды и безопасно переназначает ревьюверов в открытых PR
 // Оптимизировано для выполнения в пределах 100 мс для средних объемов данных
-func (s *UserService) BulkDeactivateTeam(teamName string) (*BulkDeactivateTeamResult, error) {
+func (s *UserService) BulkDeactivateTeam(teamName string) (*dto.BulkDeactivateTeamResponse, error) {
 	// Проверяем существование команды
 	team, err := s.teamRepo.GetByName(teamName)
 	if err != nil {
@@ -101,9 +96,9 @@ func (s *UserService) BulkDeactivateTeam(teamName string) (*BulkDeactivateTeamRe
 	}
 
 	if len(userIDs) == 0 {
-		return &BulkDeactivateTeamResult{
+		return &dto.BulkDeactivateTeamResponse{
 			DeactivatedUsers: 0,
-			ReassignedPRs:     0,
+			ReassignedPRs:    0,
 		}, nil
 	}
 
@@ -128,7 +123,7 @@ func (s *UserService) BulkDeactivateTeam(teamName string) (*BulkDeactivateTeamRe
 		}
 	}
 
-	return &BulkDeactivateTeamResult{
+	return &dto.BulkDeactivateTeamResponse{
 		DeactivatedUsers: deactivatedCount,
 		ReassignedPRs:    reassignedCount,
 	}, nil

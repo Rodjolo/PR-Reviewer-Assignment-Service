@@ -1,7 +1,7 @@
 package router
 
 import (
-	"pr-reviewer-service/internal/handlers"
+	"github.com/Rodjolo/pr-reviewer-service/internal/handlers"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"

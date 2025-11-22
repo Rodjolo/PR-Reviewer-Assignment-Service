@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"pr-reviewer-service/internal/models"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 
 	"github.com/lib/pq"
 )

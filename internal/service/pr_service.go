@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
-	"pr-reviewer-service/internal/models"
-	"pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
+	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
 	"math/rand"
 	"time"
 )

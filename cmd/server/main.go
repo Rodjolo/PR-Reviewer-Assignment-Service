@@ -4,13 +4,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"pr-reviewer-service/internal/database"
-	"pr-reviewer-service/internal/handlers"
-	"pr-reviewer-service/internal/repository"
-	"pr-reviewer-service/internal/router"
-	"pr-reviewer-service/internal/service"
+	"github.com/Rodjolo/pr-reviewer-service/internal/database"
+	"github.com/Rodjolo/pr-reviewer-service/internal/handlers"
+	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/internal/router"
+	"github.com/Rodjolo/pr-reviewer-service/internal/service"
 
-	_ "pr-reviewer-service/docs" // Swagger docs
+	_ "github.com/Rodjolo/pr-reviewer-service/docs" // Swagger docs
 )
 
 func main() {

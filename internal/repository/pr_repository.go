@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"math/rand"
-	"pr-reviewer-service/internal/models"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 	"time"
 
 	"github.com/lib/pq"

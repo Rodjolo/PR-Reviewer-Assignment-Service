@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
 )
 
 type StatsService struct {
