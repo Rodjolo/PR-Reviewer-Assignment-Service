@@ -37,4 +37,3 @@ type TeamServiceInterface interface {
 type StatsServiceInterface interface {
 	GetStats() (map[string]int, error)
 }
-

@@ -97,12 +97,11 @@ func (r *UserRepository) BulkDeactivateByTeam(teamName string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(rowsAffected), nil
 }
-

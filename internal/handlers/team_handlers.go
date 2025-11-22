@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/dto"
+	"github.com/gorilla/mux"
 )
 
 // CreateTeam godoc
@@ -159,4 +159,3 @@ func (h *Handlers) RemoveTeamMember(w http.ResponseWriter, r *http.Request) {
 
 	h.respondJSON(w, http.StatusOK, dto.MessageResponse{Message: "member removed"})
 }
-

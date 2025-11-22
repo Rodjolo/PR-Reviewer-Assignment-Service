@@ -32,4 +32,3 @@ type CreateTeamRequest struct {
 type AddMemberRequest struct {
 	UserID int `json:"user_id" example:"1"`
 }
-

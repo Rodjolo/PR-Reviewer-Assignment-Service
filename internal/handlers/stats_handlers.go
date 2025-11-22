@@ -20,4 +20,3 @@ func (h *Handlers) GetStats(w http.ResponseWriter, r *http.Request) {
 	}
 	h.respondJSON(w, http.StatusOK, stats)
 }
-

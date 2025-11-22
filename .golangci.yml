@@ -1,0 +1,181 @@
+run:
+  # Таймаут для анализа
+  timeout: 5m
+  
+  # Количество процессоров для использования
+  concurrency: 4
+
+# Настройки линтеров
+linters:
+  enable:
+    # Базовые линтеры
+    - errcheck      # Проверяет необработанные ошибки
+    - gosimple      # Упрощает код
+    - govet         # Проверяет подозрительные конструкции
+    - ineffassign   # Обнаруживает неэффективные присваивания
+    - staticcheck   # Набор статических проверок
+    - unused        # Находит неиспользуемый код
+    
+    # Стиль кода
+    - gofmt         # Проверяет форматирование gofmt
+    # - goimports   # Отключен на Windows (требует diff в PATH)
+    - misspell      # Находит орфографические ошибки
+    - revive        # Быстрая замена golint
+    
+    # Обработка ошибок
+    - err113        # Проверяет обработку ошибок по Go 1.13+ (ранее goerr113)
+    - errname       # Проверяет именование переменных ошибок
+    
+    # Производительность
+    - prealloc      # Находит срезы, которые можно преаллоцировать
+    
+    # Стиль и читаемость
+    - unconvert     # Удаляет ненужные преобразования типов
+    - unparam       # Находит неиспользуемые параметры функций
+    - whitespace    # Проверяет пробелы
+    
+    # Безопасность
+    - gosec         # Проверяет проблемы безопасности
+    
+    # SQL
+    - rowserrcheck  # Проверяет обработку ошибок sql.Rows.Err()
+    - sqlclosecheck # Проверяет закрытие sql.Rows и sql.Stmt
+    
+  disable:
+    - typecheck     # Отключаем, так как go build делает это лучше
+    - asciicheck    # Отключаем из-за проблем с репозиторием
+    - gocyclo       # Отключаем из-за проблем с репозиторием
+    - goheader      # Отключаем из-за проблем с репозиторием
+    - tagalign      # Отключаем из-за проблем с репозиторием
+    - tagliatelle   # Отключаем из-за проблем с репозиторием
+    - testifylint   # Отключаем из-за проблем с репозиторием
+    - testpackage   # Отключаем из-за проблем с репозиторием
+    - thelper       # Отключаем из-за проблем с репозиторием
+
+# Настройки отдельных линтеров
+linters-settings:
+  # Настройки errcheck
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - (*database/sql.Rows).Close
+      - (*database/sql.DB).Close
+  
+  # Настройки govet
+  govet:
+    enable-all: true
+    disable:
+      - shadow  # Отключаем проверку затенения переменных
+  
+  # Настройки staticcheck
+  staticcheck:
+    checks: ["all"]
+  
+  # Настройки goimports
+  goimports:
+    local-prefixes: github.com/Rodjolo/pr-reviewer-service
+  
+  # Настройки revive (замена golint)
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+  
+  # Настройки misspell
+  misspell:
+    locale: US
+    ignore-words:
+      - someword
+  
+  # Настройки gosec
+  gosec:
+    excludes:
+      - G404  # Использование слабого генератора случайных чисел (rand вместо crypto/rand)
+  
+  # Настройки prealloc
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: true
+
+# Исключения
+issues:
+  # Максимальное количество проблем на линтер
+  max-issues-per-linter: 50
+  
+  # Максимальное общее количество проблем
+  max-same-issues: 3
+  
+  # Показывать все проблемы
+  new: false
+  
+  # Исключить директории
+  exclude-dirs:
+    - vendor
+    - bin
+    - .git
+  
+  # Исключить файлы
+  exclude-files:
+    - ".*_test\\.go$"
+    - "docs/swagger\\.go$"
+  
+  # Исключить определенные проблемы
+  exclude-rules:
+    # Исключаем проблемы в тестах
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+        - err113
+    
+    # Исключаем проблемы в main.go
+    - path: cmd/
+      linters:
+        - gosec
+    
+    # Исключаем длинные строки для комментариев и строковых литералов
+    - linters:
+        - revive
+      text: "line is .* characters"
+    
+    # Исключаем ошибки экспортируемых функций без комментариев для handlers
+    - path: internal/handlers/
+      linters:
+        - revive
+      text: "exported: exported (method|function|type|const) .* should have comment"
+  
+  # Не исключать стандартные проблемы
+  exclude-use-default: false
+
+# Настройки вывода
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true

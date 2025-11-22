@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"math/rand"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
+	"math/rand"
 	"time"
 
 	"github.com/lib/pq"

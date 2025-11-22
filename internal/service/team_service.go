@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 )
 
 type TeamService struct {
@@ -107,4 +107,3 @@ func (s *TeamService) RemoveMember(teamName string, userID int) error {
 
 	return nil
 }
-

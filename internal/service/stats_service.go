@@ -20,4 +20,3 @@ func (s *StatsService) GetStats() (map[string]int, error) {
 	}
 	return stats, nil
 }
-

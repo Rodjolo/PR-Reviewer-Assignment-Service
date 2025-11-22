@@ -21,4 +21,3 @@ type BulkDeactivateTeamResponse struct {
 
 // Stats Response (используется map[string]int, но можно добавить структуру для типизации)
 type StatsResponse map[string]int
-

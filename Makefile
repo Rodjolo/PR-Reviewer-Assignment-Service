@@ -96,3 +96,34 @@ load-test-quick:
 load-test-simple:
 	@powershell -ExecutionPolicy Bypass -File scripts/load_test_simple.ps1
 
+# Установка golangci-lint (рекомендуется использовать binary installation для Windows)
+install-linter:
+	@echo "Installing golangci-lint..."
+	@echo "Note: If 'go install' fails on Windows, download binary from:"
+	@echo "https://github.com/golangci/golangci-lint/releases"
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Установка golangci-lint через бинарник (Windows PowerShell)
+install-linter-win:
+	@powershell -Command "Invoke-WebRequest -OutFile golangci-lint.zip -Uri https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-windows-amd64.zip; Expand-Archive -Path golangci-lint.zip -DestinationPath .; Move-Item -Path golangci-lint-1.61.0-windows-amd64\golangci-lint.exe -Destination $(GOPATH)\bin\; Remove-Item -Recurse -Force golangci-lint-1.61.0-windows-amd64, golangci-lint.zip"
+
+# Запуск линтера
+lint:
+	@which golangci-lint > /dev/null 2>&1 || where golangci-lint > nul 2>&1 || (echo "golangci-lint not found. Run 'make install-linter' or 'make install-linter-win' first" && exit 1)
+	golangci-lint run ./...
+
+# Запуск линтера с автоисправлением
+lint-fix:
+	@which golangci-lint > /dev/null 2>&1 || where golangci-lint > nul 2>&1 || (echo "golangci-lint not found. Run 'make install-linter' or 'make install-linter-win' first" && exit 1)
+	golangci-lint run --fix ./...
+
+# Базовая проверка через встроенные инструменты Go (альтернатива golangci-lint)
+lint-basic:
+	@echo "Running go vet..."
+	@go vet ./internal/... ./pkg/...
+	@echo "Checking code formatting..."
+	@gofmt -l internal pkg || echo "Some files need formatting. Run 'gofmt -w internal pkg' to fix"
+	@echo "Building to check for errors..."
+	@go build ./...
+	@echo "OK - Basic lint checks passed!"
+

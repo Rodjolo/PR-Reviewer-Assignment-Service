@@ -39,4 +39,3 @@ func NewRouter(h *handlers.Handlers) *mux.Router {
 
 	return r
 }
-

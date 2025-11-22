@@ -128,4 +128,3 @@ func (s *UserService) BulkDeactivateTeam(teamName string) (*dto.BulkDeactivateTe
 		ReassignedPRs:    reassignedCount,
 	}, nil
 }
-

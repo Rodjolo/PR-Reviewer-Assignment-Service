@@ -20,9 +20,9 @@ func New(connectionString string) (*DB, error) {
 
 	// Настройка пула соединений для высокой нагрузки
 	// Увеличено для поддержки 50 concurrent connections + запас
-	db.SetMaxOpenConns(100)                // Максимум открытых соединений (было 25)
-	db.SetMaxIdleConns(20)                 // Максимум неактивных соединений (было 5)
-	db.SetConnMaxLifetime(5 * 60 * 1000000000) // 5 минут
+	db.SetMaxOpenConns(100)                     // Максимум открытых соединений (было 25)
+	db.SetMaxIdleConns(20)                      // Максимум неактивных соединений (было 5)
+	db.SetConnMaxLifetime(5 * 60 * 1000000000)  // 5 минут
 	db.SetConnMaxIdleTime(10 * 60 * 1000000000) // 10 минут
 
 	if err := db.Ping(); err != nil {
@@ -36,4 +36,3 @@ func New(connectionString string) (*DB, error) {
 func (db *DB) Close() error {
 	return db.DB.Close()
 }
-
