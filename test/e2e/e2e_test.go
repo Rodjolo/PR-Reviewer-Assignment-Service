@@ -41,36 +41,6 @@ var (
 func TestMain(m *testing.M) {
 	var err error
 
-	// Проверяем, указан ли внешний API URL (для docker-compose.e2e.yaml)
-	apiBaseURL := os.Getenv("API_BASE_URL")
-	testDBURL := os.Getenv("TEST_DATABASE_URL")
-
-	if apiBaseURL != "" && testDBURL != "" {
-		// Режим изолированного E2E тестирования
-		log.Printf("Running in isolated E2E mode with external API: %s", apiBaseURL)
-		
-		// Подключаемся к тестовой БД для cleanup
-		testDB, err = database.New(testDBURL)
-		if err != nil {
-			log.Fatalf("Failed to connect to test database: %v", err)
-		}
-
-		// Используем внешний API
-		testServer = &httptest.Server{
-			URL: apiBaseURL,
-		}
-
-		// Запускаем тесты
-		code := m.Run()
-
-		// Очистка
-		testDB.Close()
-		os.Exit(code)
-	}
-
-	// Режим локального тестирования с dockertest
-	log.Println("Running in local test mode with dockertest")
-
 	// Создаем pool для работы с Docker
 	pool, err = dockertest.NewPool("")
 	if err != nil {

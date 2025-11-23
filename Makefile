@@ -18,28 +18,14 @@ run:
 test:
 	go test -v ./...
 
-# Запуск E2E тестов (локально с dockertest)
+# Запуск E2E тестов
 test-e2e:
-	@echo "Running E2E tests locally with dockertest..."
-	@go test -v ./test/e2e/... -timeout 120s
+	@echo "Running E2E tests..."
+	@echo "Make sure PostgreSQL is running and database 'pr_reviewer_test' exists"
+	@echo "Or set TEST_DATABASE_URL to use a different database"
+	@go test -v ./test/e2e/... -timeout 30s
 
-# Запуск E2E тестов в изолированном окружении (docker-compose)
-test-e2e-isolated:
-	@echo "Running E2E tests in isolated environment..."
-	@docker-compose -f docker-compose.e2e.yaml up --build --abort-on-container-exit --exit-code-from e2e-tests
-	@docker-compose -f docker-compose.e2e.yaml down -v
-
-# Запуск E2E окружения без тестов (для отладки)
-test-e2e-up:
-	@echo "Starting E2E environment..."
-	@docker-compose -f docker-compose.e2e.yaml up --build postgres-e2e api-e2e
-
-# Остановка E2E окружения
-test-e2e-down:
-	@echo "Stopping E2E environment..."
-	@docker-compose -f docker-compose.e2e.yaml down -v
-
-# Создание тестовой БД (PostgreSQL) - deprecated, используйте test-e2e-isolated
+# Создание тестовой БД (PostgreSQL)
 test-db-create:
 	@echo "Creating test database..."
 	@psql -U postgres -c "CREATE DATABASE pr_reviewer_test;" || echo "Database already exists or connection error"

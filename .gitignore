@@ -31,7 +31,6 @@ go.work
 .env.local
 .env.*
 !.env.example
-!.env.e2e
 *.env
 !*.env.example
 
