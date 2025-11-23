@@ -10,7 +10,7 @@
    ```bash
    docker-compose up -d
    ```
-   Проверьте доступность: `curl http://localhost:8080/stats`
+   Проверьте доступность: `curl http://localhost:8081/stats`
 
 ## Способы тестирования
 
@@ -40,7 +40,7 @@ make load-test-quick
 
 **Ручной запуск:**
 ```bash
-bombardier -c 50 -n 20000 http://localhost:8080/stats --print intro,progress,result
+bombardier -c 50 -n 20000 http://localhost:8081/stats --print intro,progress,result
 ```
 
 ### 2. Упрощенный вариант (PowerShell, без внешних зависимостей)
@@ -64,7 +64,7 @@ powershell -ExecutionPolicy Bypass -File scripts/load_test_simple.ps1
 
 ```bash
 # Windows PowerShell
-Measure-Command { 1..100 | ForEach-Object { Invoke-WebRequest -Uri "http://localhost:8080/stats" -UseBasicParsing } }
+Measure-Command { 1..100 | ForEach-Object { Invoke-WebRequest -Uri "http://localhost:8081/stats" -UseBasicParsing } }
 ```
 
 ## Настройка параметров
@@ -77,7 +77,7 @@ $env:REQUESTS=50000
 make load-test-win
 
 # Или напрямую
-bombardier -c 100 -n 50000 http://localhost:8080/stats
+bombardier -c 100 -n 50000 http://localhost:8081/stats
 ```
 
 ### Для упрощенного скрипта:
@@ -109,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File scripts/load_test_simple.ps1
 ```bash
 docker-compose up -d
 # Подождите 5-10 секунд
-curl http://localhost:8080/stats
+curl http://localhost:8081/stats
 ```
 
 ### Проблема: "bombardier не устанавливается"
@@ -125,7 +125,7 @@ curl http://localhost:8080/stats
 
 ```
 Bombardier 1.2.6
-Running 20000 request(s) @ http://localhost:8080/stats
+Running 20000 request(s) @ http://localhost:8081/stats
 100% |████████████████████████████████| [20000/20000] [00:04<00:00, 4500 req/s]
 
 Statistics        Avg      Stdev        Max

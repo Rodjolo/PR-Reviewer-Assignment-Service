@@ -1,7 +1,7 @@
 # Упрощенный скрипт нагрузочного тестирования
 # Использует встроенные возможности PowerShell для тестирования
 
-$API_URL = if ($env:API_URL) { $env:API_URL } else { "http://localhost:8080" }
+$API_URL = if ($env:API_URL) { $env:API_URL } else { "http://localhost:8081" }
 $CONCURRENT = if ($env:CONCURRENT) { $env:CONCURRENT } else { 50 }
 $REQUESTS = if ($env:REQUESTS) { $env:REQUESTS } else { 200 }
 
@@ -94,6 +94,6 @@ Write-Host "=========================================="
 Write-Host ""
 Write-Host "Примечание: Для более точного тестирования рекомендуется использовать bombardier:"
 Write-Host "  go install github.com/codesenberg/bombardier@latest"
-Write-Host "  bombardier -c 50 -n 20000 http://localhost:8080/stats"
+Write-Host "  bombardier -c 50 -n 20000 http://localhost:8081/stats"
 
 

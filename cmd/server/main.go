@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"github.com/Rodjolo/pr-reviewer-service/internal/database"
@@ -51,7 +52,15 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
+	
+	// Используем net.Listen для явного указания IPv4
+	listener, err := net.Listen("tcp4", "0.0.0.0:"+port)
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+	
+	log.Printf("Server listening on %s", listener.Addr().String())
+	if err := http.Serve(listener, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

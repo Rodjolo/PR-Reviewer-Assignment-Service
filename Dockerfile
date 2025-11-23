@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine3.19 AS builder
+FROM golang:1.23.0-alpine AS builder
 
 # Обновляем пакеты до последних версий с исправлениями безопасности
 RUN apk update && apk upgrade --no-cache && apk add --no-cache git
@@ -18,8 +18,8 @@ COPY . .
 # Генерируем Swagger документацию
 RUN swag init -g cmd/server/main.go -o docs || true
 
-# Генерируем go.sum на основе всех импортов
-RUN go mod tidy
+# Генерируем go.sum на основе всех импортов (необязательно, если есть проблемы с сетью)
+RUN go mod tidy || true
 
 # Собираем приложение
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/server ./cmd/server

@@ -8,7 +8,7 @@ REST API сервис для автоматического назначения
 
 ## Технологии
 
-- **Язык**: Go 1.21
+- **Язык**: Go 1.23
 - **База данных**: PostgreSQL 15
 - **Роутинг**: gorilla/mux
 - **Миграции**: golang-migrate
@@ -21,7 +21,7 @@ REST API сервис для автоматического назначения
 docker-compose up --build
 ```
 
-Сервис будет доступен на `http://localhost:8080`
+Сервис будет доступен на `http://localhost:8081`
 
 ### Локальный запуск
 
@@ -278,7 +278,7 @@ cp .env.example .env
 - `DATABASE_URL` - строка подключения к PostgreSQL (обязательно!)
   - Формат: `postgres://username:password@host:port/database?sslmode=disable`
   - Пример: `postgres://postgres:your_password@localhost:5432/pr_reviewer?sslmode=disable`
-- `PORT` - порт для HTTP сервера (по умолчанию: `8080`)
+- `PORT` - порт для HTTP сервера (по умолчанию: `8080`, внешний порт: `8081`)
 - `POSTGRES_USER` - пользователь PostgreSQL (для docker-compose)
 - `POSTGRES_PASSWORD` - пароль PostgreSQL (для docker-compose)
 - `POSTGRES_DB` - имя базы данных (для docker-compose)
@@ -328,33 +328,33 @@ make seed
 
 ```bash
 # Создать пользователей
-curl -X POST http://localhost:8080/users \
+curl -X POST http://localhost:8081/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice", "is_active": true}'
 
-curl -X POST http://localhost:8080/users \
+curl -X POST http://localhost:8081/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Bob", "is_active": true}'
 
-curl -X POST http://localhost:8080/users \
+curl -X POST http://localhost:8081/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Charlie", "is_active": true}'
 
 # Создать команду
-curl -X POST http://localhost:8080/teams \
+curl -X POST http://localhost:8081/teams \
   -H "Content-Type: application/json" \
   -d '{"name": "backend"}'
 
 # Добавить участников в команду
-curl -X POST http://localhost:8080/teams/backend/members \
+curl -X POST http://localhost:8081/teams/backend/members \
   -H "Content-Type: application/json" \
   -d '{"user_id": 1}'
 
-curl -X POST http://localhost:8080/teams/backend/members \
+curl -X POST http://localhost:8081/teams/backend/members \
   -H "Content-Type: application/json" \
   -d '{"user_id": 2}'
 
-curl -X POST http://localhost:8080/teams/backend/members \
+curl -X POST http://localhost:8081/teams/backend/members \
   -H "Content-Type: application/json" \
   -d '{"user_id": 3}'
 ```
@@ -362,7 +362,7 @@ curl -X POST http://localhost:8080/teams/backend/members \
 ### Создание PR
 
 ```bash
-curl -X POST http://localhost:8080/prs \
+curl -X POST http://localhost:8081/prs \
   -H "Content-Type: application/json" \
   -d '{"title": "Add new feature", "author_id": 1}'
 ```
@@ -372,7 +372,7 @@ PR автоматически получит до 2 случайных ревь�
 ### Переназначение ревьювера
 
 ```bash
-curl -X PATCH http://localhost:8080/prs/1/reassign \
+curl -X PATCH http://localhost:8081/prs/1/reassign \
   -H "Content-Type: application/json" \
   -d '{"old_reviewer_id": 2}'
 ```
@@ -380,7 +380,7 @@ curl -X PATCH http://localhost:8080/prs/1/reassign \
 ### Merge PR
 
 ```bash
-curl -X POST http://localhost:8080/prs/1/merge
+curl -X POST http://localhost:8081/prs/1/merge
 ```
 
 ## Тестирование
@@ -432,7 +432,7 @@ make test
 ## Swagger документация
 
 После запуска сервиса Swagger UI доступен по адресу:
-- **http://localhost:8080/swagger/index.html**
+- **http://localhost:8081/swagger/index.html**
 
 Документация генерируется автоматически при сборке Docker образа. Для локальной разработки используйте:
 ```bash
@@ -456,7 +456,7 @@ go install github.com/codesenberg/bombardier@latest
 **Важно:** Перед тестированием убедитесь, что Docker Desktop запущен и сервис доступен:
 ```bash
 docker-compose up -d
-curl http://localhost:8080/stats
+curl http://localhost:8081/stats
 ```
 
 **Linux/Mac:**

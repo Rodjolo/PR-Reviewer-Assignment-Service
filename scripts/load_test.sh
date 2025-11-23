@@ -3,7 +3,7 @@
 # Скрипт для нагрузочного тестирования с помощью bombardier
 # Требует установки: go install github.com/codesenberg/bombardier@latest
 
-API_URL="${API_URL:-http://localhost:8080}"
+API_URL="${API_URL:-http://localhost:8081}"
 CONCURRENT="${CONCURRENT:-50}"
 REQUESTS="${REQUESTS:-20000}"
 

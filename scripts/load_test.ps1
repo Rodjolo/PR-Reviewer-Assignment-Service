@@ -1,7 +1,7 @@
 # Скрипт для нагрузочного тестирования с помощью bombardier (PowerShell)
 # Требует установки: go install github.com/codesenberg/bombardier@latest
 
-$API_URL = if ($env:API_URL) { $env:API_URL } else { "http://localhost:8080" }
+$API_URL = if ($env:API_URL) { $env:API_URL } else { "http://localhost:8081" }
 $CONCURRENT = if ($env:CONCURRENT) { $env:CONCURRENT } else { 50 }
 $REQUESTS = if ($env:REQUESTS) { $env:REQUESTS } else { 20000 }
 
