@@ -44,6 +44,11 @@ func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team members: %w", err)
 	}
+
+	if len(candidates) < 2 {
+		return nil, ErrInsufficientReviewers
+	}
+
 	reviewers := s.selectRandomReviewers(candidates, 2)
 
 	pr := &models.PR{

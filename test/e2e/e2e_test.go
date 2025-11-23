@@ -645,6 +645,7 @@ func TestGetStats(t *testing.T) {
 		resp.Body.Close()
 	}
 
+	// Создаем автора PR
 	userReq := dto.CreateUserRequest{Name: "Alice", IsActive: boolPtr(true)}
 	resp, _ = makeRequest("POST", "/users", userReq)
 	var user models.User
@@ -657,6 +658,32 @@ func TestGetStats(t *testing.T) {
 		resp.Body.Close()
 	}
 
+	// Создаем двух ревьюверов (требуется минимум 2 для создания PR)
+	reviewer1Req := dto.CreateUserRequest{Name: "Reviewer1", IsActive: boolPtr(true)}
+	resp, _ = makeRequest("POST", "/users", reviewer1Req)
+	var reviewer1 models.User
+	json.NewDecoder(resp.Body).Decode(&reviewer1)
+	resp.Body.Close()
+
+	memberReq = dto.AddMemberRequest{UserID: reviewer1.ID}
+	resp, _ = makeRequest("POST", "/teams/backend/members", memberReq)
+	if resp != nil {
+		resp.Body.Close()
+	}
+
+	reviewer2Req := dto.CreateUserRequest{Name: "Reviewer2", IsActive: boolPtr(true)}
+	resp, _ = makeRequest("POST", "/users", reviewer2Req)
+	var reviewer2 models.User
+	json.NewDecoder(resp.Body).Decode(&reviewer2)
+	resp.Body.Close()
+
+	memberReq = dto.AddMemberRequest{UserID: reviewer2.ID}
+	resp, _ = makeRequest("POST", "/teams/backend/members", memberReq)
+	if resp != nil {
+		resp.Body.Close()
+	}
+
+	// Теперь создаем PR
 	prReq := dto.CreatePRRequest{Title: "Test PR", AuthorID: user.ID}
 	resp, _ = makeRequest("POST", "/prs", prReq)
 	if resp != nil {
