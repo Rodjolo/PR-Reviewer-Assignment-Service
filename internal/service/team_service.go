@@ -1,8 +1,8 @@
 package service
 
 import (
-	"errors"
 	"fmt"
+
 	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 )
@@ -20,13 +20,12 @@ func NewTeamService(teamRepo repository.TeamRepositoryInterface, userRepo reposi
 }
 
 func (s *TeamService) CreateTeam(name string) (*models.Team, error) {
-	// Проверяем, существует ли команда
 	existing, err := s.teamRepo.GetByName(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check team existence: %w", err)
 	}
 	if existing != nil {
-		return nil, errors.New("team already exists")
+		return nil, ErrTeamAlreadyExists
 	}
 
 	team := &models.Team{Name: name}
@@ -58,7 +57,6 @@ func (s *TeamService) GetAllTeams() ([]models.Team, error) {
 }
 
 func (s *TeamService) AddMember(teamName string, userID int) (*models.Team, error) {
-	// Проверяем существование пользователя
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -67,21 +65,18 @@ func (s *TeamService) AddMember(teamName string, userID int) (*models.Team, erro
 		return nil, ErrUserNotFound
 	}
 
-	// Проверяем существование команды
 	team, err := s.teamRepo.GetByName(teamName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team: %w", err)
 	}
 	if team == nil {
-		return nil, errors.New("team not found")
+		return nil, ErrTeamNotFound
 	}
 
-	// Добавляем участника
 	if err := s.teamRepo.AddMember(teamName, userID); err != nil {
 		return nil, fmt.Errorf("failed to add member: %w", err)
 	}
 
-	// Возвращаем обновленную команду
 	updatedTeam, err := s.teamRepo.GetByName(teamName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated team: %w", err)
@@ -91,7 +86,6 @@ func (s *TeamService) AddMember(teamName string, userID int) (*models.Team, erro
 }
 
 func (s *TeamService) RemoveMember(teamName string, userID int) error {
-	// Проверяем существование команды
 	team, err := s.teamRepo.GetByName(teamName)
 	if err != nil {
 		return fmt.Errorf("failed to get team: %w", err)
@@ -99,8 +93,6 @@ func (s *TeamService) RemoveMember(teamName string, userID int) error {
 	if team == nil {
 		return ErrTeamNotFound
 	}
-
-	// Удаляем участника
 	if err := s.teamRepo.RemoveMember(teamName, userID); err != nil {
 		return fmt.Errorf("failed to remove member: %w", err)
 	}

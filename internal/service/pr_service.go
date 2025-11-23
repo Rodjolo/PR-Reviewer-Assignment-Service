@@ -24,7 +24,6 @@ func NewPRService(prRepo repository.PRRepositoryInterface, userRepo repository.U
 }
 
 func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
-	// Проверяем существование автора
 	author, err := s.userRepo.GetByID(authorID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get author: %w", err)
@@ -33,7 +32,6 @@ func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
 		return nil, ErrAuthorNotFound
 	}
 
-	// Получаем команду автора
 	teamName, err := s.teamRepo.GetUserTeam(authorID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user team: %w", err)
@@ -42,13 +40,10 @@ func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
 		return nil, ErrAuthorNotInTeam
 	}
 
-	// Получаем активных пользователей из команды (исключая автора)
 	candidates, err := s.userRepo.GetActiveUsersByTeam(teamName, authorID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team members: %w", err)
 	}
-
-	// Выбираем до 2 случайных ревьюверов
 	reviewers := s.selectRandomReviewers(candidates, 2)
 
 	pr := &models.PR{
@@ -75,7 +70,6 @@ func (s *PRService) selectRandomReviewers(candidates []models.User, maxCount int
 		count = len(candidates)
 	}
 
-	// Перемешиваем кандидатов
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	shuffled := make([]models.User, len(candidates))
 	copy(shuffled, candidates)
@@ -127,7 +121,6 @@ func (s *PRService) MergePR(id int) (*models.PR, error) {
 		return nil, ErrPRNotFound
 	}
 
-	// Идемпотентность: если PR уже мержен, просто возвращаем его
 	if pr.Status == models.PRStatusMerged {
 		return pr, nil
 	}
@@ -141,7 +134,6 @@ func (s *PRService) MergePR(id int) (*models.PR, error) {
 }
 
 func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, error) {
-	// Проверяем существование PR
 	pr, err := s.prRepo.GetByID(prID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
@@ -150,12 +142,10 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, ErrPRNotFound
 	}
 
-	// Проверяем статус PR
 	if pr.Status == models.PRStatusMerged {
 		return nil, ErrPRAlreadyMerged
 	}
 
-	// Проверяем, что старый ревьювер действительно назначен на этот PR
 	found := false
 	for _, reviewerID := range pr.Reviewers {
 		if reviewerID == oldReviewerID {
@@ -167,7 +157,6 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, ErrReviewerNotAssigned
 	}
 
-	// Получаем команду старого ревьювера
 	teamName, err := s.teamRepo.GetUserTeam(oldReviewerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reviewer team: %w", err)
@@ -176,13 +165,11 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, ErrReviewerNotInTeam
 	}
 
-	// Получаем активных пользователей из команды старого ревьювера (исключая его самого и автора PR)
 	candidates, err := s.userRepo.GetActiveUsersByTeam(teamName, oldReviewerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team members: %w", err)
 	}
 
-	// Создаем набор уже назначенных ревьюверов (исключая того, кого переназначаем)
 	assignedReviewers := make(map[int]struct{})
 	for _, reviewerID := range pr.Reviewers {
 		if reviewerID != oldReviewerID {
@@ -190,7 +177,6 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		}
 	}
 
-	// Исключаем автора PR и уже назначенных ревьюверов из кандидатов
 	filteredCandidates := make([]models.User, 0)
 	for _, candidate := range candidates {
 		if candidate.ID != pr.AuthorID {
@@ -204,16 +190,12 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, ErrNoAvailableReviewers
 	}
 
-	// Выбираем случайного нового ревьювера
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	newReviewerID := filteredCandidates[r.Intn(len(filteredCandidates))].ID
 
-	// Выполняем переназначение
 	if err := s.prRepo.ReassignReviewer(prID, oldReviewerID, newReviewerID); err != nil {
 		return nil, fmt.Errorf("failed to reassign reviewer: %w", err)
 	}
-
-	// Возвращаем обновленный PR
 	updatedPR, err := s.prRepo.GetByID(prID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated PR: %w", err)

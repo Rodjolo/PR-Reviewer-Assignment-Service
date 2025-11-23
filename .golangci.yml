@@ -133,7 +133,7 @@ issues:
   # Показывать все проблемы
   new: false
   
-  # Уникальность по строкам (перенесено из output.uniq-by-line)
+  # Уникальность по строкам
   uniq-by-line: true
   
   # Исключить директории
@@ -142,7 +142,7 @@ issues:
     - bin
     - .git
   
-  # Исключить файлы (только тесты, остальные проверяем)
+  # Исключить файлы
   exclude-files:
     - ".*_test\\.go$"
   
@@ -171,7 +171,7 @@ issues:
         - revive
       text: "exported: exported (method|function|type|const) .* should have comment"
     
-    # Исключаем err113 (dynamic errors) для сервисов (можем использовать errors.New)
+    # Исключаем err113 для сервисов
     - path: internal/service/
       linters:
         - err113

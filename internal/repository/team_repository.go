@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 
 	"github.com/lib/pq"
@@ -49,7 +50,6 @@ func (r *TeamRepository) GetByName(name string) (*models.Team, error) {
 		return nil, err
 	}
 
-	// Проверяем существование команды
 	var exists bool
 	err = r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM teams WHERE name = $1)", name).Scan(&exists)
 	if err != nil {
@@ -64,8 +64,6 @@ func (r *TeamRepository) GetByName(name string) (*models.Team, error) {
 }
 
 func (r *TeamRepository) GetAll() ([]models.Team, error) {
-	// Оптимизированный подход: сначала получаем команды, потом участников
-	// Это быстрее при большом количестве данных
 	teamRows, err := r.db.Query("SELECT name FROM teams ORDER BY name")
 	if err != nil {
 		return nil, err
@@ -85,7 +83,6 @@ func (r *TeamRepository) GetAll() ([]models.Team, error) {
 		return nil, err
 	}
 
-	// Загружаем участников для всех команд одним запросом
 	if len(teams) == 0 {
 		return teams, nil
 	}
@@ -107,14 +104,12 @@ func (r *TeamRepository) GetAll() ([]models.Team, error) {
 	}
 	defer memberRows.Close()
 
-	// Создаем map для быстрого доступа
 	teamsMap := make(map[string]*models.Team)
 	for i := range teams {
 		teams[i].Members = []models.User{}
 		teamsMap[teams[i].Name] = &teams[i]
 	}
 
-	// Заполняем участников
 	for memberRows.Next() {
 		var teamName string
 		var user models.User

@@ -34,7 +34,6 @@ func (r *PRRepository) Create(pr *models.PR) error {
 		return err
 	}
 
-	// Добавляем ревьюверов
 	for _, reviewerID := range pr.Reviewers {
 		_, err = tx.Exec(
 			"INSERT INTO pr_reviewers (pr_id, reviewer_id) VALUES ($1, $2)",
@@ -85,7 +84,6 @@ func (r *PRRepository) GetByID(id int) (*models.PR, error) {
 }
 
 func (r *PRRepository) GetByUserID(userID int) ([]models.PR, error) {
-	// Оптимизированный подход: сначала получаем PR, потом ревьюверов
 	prRows, err := r.db.Query(`
 		SELECT DISTINCT pr.id, pr.title, pr.author_id, pr.status
 		FROM pull_requests pr
@@ -112,7 +110,6 @@ func (r *PRRepository) GetByUserID(userID int) ([]models.PR, error) {
 		return nil, err
 	}
 
-	// Загружаем ревьюверов для всех PR одним запросом
 	if len(prs) == 0 {
 		return prs, nil
 	}
@@ -133,13 +130,11 @@ func (r *PRRepository) GetByUserID(userID int) ([]models.PR, error) {
 	}
 	defer reviewerRows.Close()
 
-	// Создаем map для быстрого доступа
 	prsMap := make(map[int]*models.PR)
 	for i := range prs {
 		prsMap[prs[i].ID] = &prs[i]
 	}
 
-	// Заполняем ревьюверов
 	for reviewerRows.Next() {
 		var prID, reviewerID int
 		if err := reviewerRows.Scan(&prID, &reviewerID); err != nil {
@@ -154,8 +149,6 @@ func (r *PRRepository) GetByUserID(userID int) ([]models.PR, error) {
 }
 
 func (r *PRRepository) GetAll() ([]models.PR, error) {
-	// Оптимизированный подход: сначала получаем PR, потом ревьюверов
-	// Это быстрее при большом количестве данных
 	prRows, err := r.db.Query("SELECT id, title, author_id, status FROM pull_requests ORDER BY id")
 	if err != nil {
 		return nil, err
@@ -176,7 +169,6 @@ func (r *PRRepository) GetAll() ([]models.PR, error) {
 		return nil, err
 	}
 
-	// Загружаем ревьюверов для всех PR одним запросом
 	if len(prs) == 0 {
 		return prs, nil
 	}
@@ -197,13 +189,11 @@ func (r *PRRepository) GetAll() ([]models.PR, error) {
 	}
 	defer reviewerRows.Close()
 
-	// Создаем map для быстрого доступа
 	prsMap := make(map[int]*models.PR)
 	for i := range prs {
 		prsMap[prs[i].ID] = &prs[i]
 	}
 
-	// Заполняем ревьюверов
 	for reviewerRows.Next() {
 		var prID, reviewerID int
 		if err := reviewerRows.Scan(&prID, &reviewerID); err != nil {
@@ -236,7 +226,6 @@ func (r *PRRepository) ReassignReviewer(prID int, oldReviewerID int, newReviewer
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Удаляем старого ревьювера
 	_, err = tx.Exec(
 		"DELETE FROM pr_reviewers WHERE pr_id = $1 AND reviewer_id = $2",
 		prID, oldReviewerID,
@@ -335,11 +324,7 @@ func (r *PRRepository) GetOpenPRsWithReviewers(userIDs []int) (map[int][]int, er
 	return result, rows.Err()
 }
 
-// BulkReassignReviewers безопасно переназначает ревьюверов в открытых PR
-// prReviewerMap - map[prID][]reviewerID - открытые PR с ревьюверами, которых нужно заменить
-// teamName - имя команды для поиска новых ревьюверов
-// excludeUserIDs - список ID пользователей, которых нужно исключить из кандидатов
-// Возвращает количество переназначений
+// BulkReassignReviewers safely reassigns reviewers in open PRs.
 func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamName string, excludeUserIDs []int) (int, error) {
 	if len(prReviewerMap) == 0 {
 		return 0, nil
@@ -351,7 +336,6 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Получаем активных пользователей команды для переназначения
 	var candidates []int
 	var candidatesRows *sql.Rows
 	if len(excludeUserIDs) > 0 {
@@ -391,7 +375,6 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 	}
 
 	if len(candidates) == 0 {
-		// Нет доступных кандидатов - просто удаляем ревьюверов
 		reassignments := 0
 		for prID, oldReviewerIDs := range prReviewerMap {
 			for _, oldReviewerID := range oldReviewerIDs {
@@ -408,7 +391,6 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 		return reassignments, tx.Commit()
 	}
 
-	// Получаем авторов всех PR одним запросом для оптимизации
 	prIDs := make([]int, 0, len(prReviewerMap))
 	for prID := range prReviewerMap {
 		prIDs = append(prIDs, prID)
@@ -437,14 +419,12 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 		}
 	}
 
-	// Переназначаем ревьюверов
 	reassignments := 0
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for prID, oldReviewerIDs := range prReviewerMap {
 		authorID := authorsMap[prID]
 
-		// Фильтруем кандидатов, исключая автора
 		availableCandidates := make([]int, 0)
 		for _, candidateID := range candidates {
 			if candidateID != authorID {
@@ -453,7 +433,6 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 		}
 
 		if len(availableCandidates) == 0 {
-			// Нет доступных кандидатов - удаляем ревьюверов
 			for _, oldReviewerID := range oldReviewerIDs {
 				_, err = tx.Exec(
 					"DELETE FROM pr_reviewers WHERE pr_id = $1 AND reviewer_id = $2",
@@ -467,12 +446,9 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 			continue
 		}
 
-		// Переназначаем каждого старого ревьювера
 		for _, oldReviewerID := range oldReviewerIDs {
-			// Выбираем случайного нового ревьювера
 			newReviewerID := availableCandidates[rng.Intn(len(availableCandidates))]
 
-			// Удаляем старого ревьювера
 			_, err = tx.Exec(
 				"DELETE FROM pr_reviewers WHERE pr_id = $1 AND reviewer_id = $2",
 				prID, oldReviewerID,
@@ -481,7 +457,6 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 				return 0, err
 			}
 
-			// Добавляем нового ревьювера (если его еще нет)
 			_, err = tx.Exec(
 				"INSERT INTO pr_reviewers (pr_id, reviewer_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
 				prID, newReviewerID,

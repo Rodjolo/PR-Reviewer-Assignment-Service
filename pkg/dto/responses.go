@@ -1,20 +1,14 @@
 package dto
 
-// Error Response
-
 // ErrorResponse represents an error response from the API.
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-// Success Response
-
 // MessageResponse represents a success message response from the API.
 type MessageResponse struct {
 	Message string `json:"message"`
 }
-
-// Bulk Deactivate Response
 
 // BulkDeactivateTeamResponse represents the response when bulk deactivating a team.
 type BulkDeactivateTeamResponse struct {

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"errors"
 	"fmt"
+
 	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/dto"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
@@ -60,7 +60,7 @@ func (s *UserService) UpdateUser(id int, name *string, isActive *bool) (*models.
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 
 	if name != nil {
@@ -77,19 +77,15 @@ func (s *UserService) UpdateUser(id int, name *string, isActive *bool) (*models.
 	return user, nil
 }
 
-// BulkDeactivateTeam деактивирует всех пользователей команды и безопасно переназначает ревьюверов в открытых PR
-// Оптимизировано для выполнения в пределах 100 мс для средних объемов данных
+// BulkDeactivateTeam deactivates all team members and reassigns their reviewers
 func (s *UserService) BulkDeactivateTeam(teamName string) (*dto.BulkDeactivateTeamResponse, error) {
-	// Проверяем существование команды
 	team, err := s.teamRepo.GetByName(teamName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team: %w", err)
 	}
 	if team == nil {
-		return nil, errors.New("team not found")
+		return nil, ErrTeamNotFound
 	}
-
-	// Получаем список пользователей команды перед деактивацией
 	userIDs := make([]int, len(team.Members))
 	for i, member := range team.Members {
 		userIDs[i] = member.ID
@@ -102,19 +98,15 @@ func (s *UserService) BulkDeactivateTeam(teamName string) (*dto.BulkDeactivateTe
 		}, nil
 	}
 
-	// Получаем открытые PR с ревьюверами из этой команды
 	prReviewerMap, err := s.prRepo.GetOpenPRsWithReviewers(userIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get open PRs: %w", err)
 	}
 
-	// Деактивируем пользователей
 	deactivatedCount, err := s.userRepo.BulkDeactivateByTeam(teamName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deactivate users: %w", err)
 	}
-
-	// Переназначаем ревьюверов в открытых PR
 	reassignedCount := 0
 	if len(prReviewerMap) > 0 {
 		reassignedCount, err = s.prRepo.BulkReassignReviewers(prReviewerMap, teamName, userIDs)
