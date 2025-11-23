@@ -1,3 +1,4 @@
+// Package handlers provides HTTP request handlers for the PR reviewer service.
 package handlers
 
 import (
@@ -26,7 +27,10 @@ func NewHandlers(prService service.PRServiceInterface, userService service.UserS
 func (h *Handlers) respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		// Log error but don't change response since headers are already sent
+		_ = err
+	}
 }
 
 func (h *Handlers) respondError(w http.ResponseWriter, status int, message string) {

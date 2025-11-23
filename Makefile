@@ -3,7 +3,7 @@
 # Переменные
 # Используйте переменные окружения или создайте .env файл
 # DB_URL должен быть установлен через переменную окружения DATABASE_URL
-PORT ?= 8080
+PORT ?= 8081
 
 # Сборка приложения
 build:
@@ -107,15 +107,17 @@ install-linter:
 install-linter-win:
 	@powershell -Command "Invoke-WebRequest -OutFile golangci-lint.zip -Uri https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-windows-amd64.zip; Expand-Archive -Path golangci-lint.zip -DestinationPath .; Move-Item -Path golangci-lint-1.61.0-windows-amd64\golangci-lint.exe -Destination $(GOPATH)\bin\; Remove-Item -Recurse -Force golangci-lint-1.61.0-windows-amd64, golangci-lint.zip"
 
-# Запуск линтера
+# Запуск линтера (завершается с ошибкой, если найдены проблемы)
 lint:
-	@which golangci-lint > /dev/null 2>&1 || where golangci-lint > nul 2>&1 || (echo "golangci-lint not found. Run 'make install-linter' or 'make install-linter-win' first" && exit 1)
-	golangci-lint run ./...
+	@golangci-lint run ./... || (echo "" && echo "Linter found issues. Use 'make lint-check' to see issues without failing." && exit 1)
+
+# Запуск линтера (показывает проблемы, но не завершается с ошибкой)
+lint-check:
+	-@golangci-lint run ./...
 
 # Запуск линтера с автоисправлением
 lint-fix:
-	@which golangci-lint > /dev/null 2>&1 || where golangci-lint > nul 2>&1 || (echo "golangci-lint not found. Run 'make install-linter' or 'make install-linter-win' first" && exit 1)
-	golangci-lint run --fix ./...
+	@golangci-lint run --fix ./... || (echo "" && echo "Some issues could not be auto-fixed. Check output above." && exit 1)
 
 # Базовая проверка через встроенные инструменты Go (альтернатива golangci-lint)
 lint-basic:

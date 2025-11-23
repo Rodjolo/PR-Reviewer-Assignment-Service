@@ -80,7 +80,7 @@ func (h *Handlers) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} models.User
 // @Failure 500 {object} map[string]string
 // @Router /users [get]
-func (h *Handlers) ListUsers(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ListUsers(w http.ResponseWriter, _ *http.Request) {
 	users, err := h.userService.GetAllUsers()
 	if err != nil {
 		h.respondError(w, http.StatusInternalServerError, err.Error())

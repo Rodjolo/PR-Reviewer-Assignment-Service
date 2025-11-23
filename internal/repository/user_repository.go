@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 )
 
@@ -27,7 +28,7 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 		"SELECT id, name, is_active FROM users WHERE id = $1",
 		id,
 	).Scan(&user.ID, &user.Name, &user.IsActive)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	return user, err

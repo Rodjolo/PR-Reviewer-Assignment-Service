@@ -1,3 +1,4 @@
+// Package repository provides data access layer interfaces and implementations.
 package repository
 
 import (
@@ -36,4 +37,3 @@ type TeamRepositoryInterface interface {
 	RemoveMember(teamName string, userID int) error
 	GetUserTeam(userID int) (string, error)
 }
-

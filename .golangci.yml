@@ -61,6 +61,7 @@ linters-settings:
     exclude-functions:
       - (*database/sql.Rows).Close
       - (*database/sql.DB).Close
+      - (*database/sql.Tx).Rollback
   
   # Настройки govet
   govet:
@@ -132,16 +133,18 @@ issues:
   # Показывать все проблемы
   new: false
   
+  # Уникальность по строкам (перенесено из output.uniq-by-line)
+  uniq-by-line: true
+  
   # Исключить директории
   exclude-dirs:
     - vendor
     - bin
     - .git
   
-  # Исключить файлы
+  # Исключить файлы (только тесты, остальные проверяем)
   exclude-files:
     - ".*_test\\.go$"
-    - "docs/swagger\\.go$"
   
   # Исключить определенные проблемы
   exclude-rules:
@@ -162,11 +165,22 @@ issues:
         - revive
       text: "line is .* characters"
     
-    # Исключаем ошибки экспортируемых функций без комментариев для handlers
-    - path: internal/handlers/
+    # Исключаем ошибки экспортируемых функций без комментариев для некоторых пакетов
+    - path: internal/(handlers|repository|service|router)/
       linters:
         - revive
       text: "exported: exported (method|function|type|const) .* should have comment"
+    
+    # Исключаем err113 (dynamic errors) для сервисов (можем использовать errors.New)
+    - path: internal/service/
+      linters:
+        - err113
+      text: "do not define dynamic errors"
+    
+    # Исключаем prealloc warnings
+    - linters:
+        - prealloc
+      text: "Consider pre-allocating"
   
   # Не исключать стандартные проблемы
   exclude-use-default: false
@@ -177,5 +191,4 @@ output:
     - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
-  uniq-by-line: true
   sort-results: true

@@ -1,3 +1,4 @@
+// Package database provides database connection and configuration.
 package database
 
 import (
@@ -5,13 +6,16 @@ import (
 	"fmt"
 	"log"
 
+	// PostgreSQL driver
 	_ "github.com/lib/pq"
 )
 
+// DB wraps sql.DB with additional functionality.
 type DB struct {
 	*sql.DB
 }
 
+// New creates a new database connection with optimized connection pool settings.
 func New(connectionString string) (*DB, error) {
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
@@ -33,6 +37,7 @@ func New(connectionString string) (*DB, error) {
 	return &DB{db}, nil
 }
 
+// Close closes the database connection.
 func (db *DB) Close() error {
 	return db.DB.Close()
 }

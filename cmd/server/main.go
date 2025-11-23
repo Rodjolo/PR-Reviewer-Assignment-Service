@@ -1,3 +1,4 @@
+// Package main is the entry point for the PR reviewer service HTTP server.
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+
 	"github.com/Rodjolo/pr-reviewer-service/internal/database"
 	"github.com/Rodjolo/pr-reviewer-service/internal/handlers"
 	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
@@ -26,7 +28,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
 
 	// Инициализируем репозитории
 	userRepo := repository.NewUserRepository(db.DB)
@@ -58,16 +64,15 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %s (external: %s)", port, externalPort)
-	
+
 	// Используем net.Listen для явного указания IPv4
 	listener, err := net.Listen("tcp4", "0.0.0.0:"+port)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-	
+
 	log.Printf("Server listening on %s (accessible externally on port %s)", listener.Addr().String(), externalPort)
 	if err := http.Serve(listener, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
-

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 
 	"github.com/lib/pq"
@@ -125,31 +126,10 @@ func (r *TeamRepository) GetAll() ([]models.Team, error) {
 		}
 	}
 
-	return teams, memberRows.Err()
-}
-
-func (r *TeamRepository) getTeamMembers(teamName string) ([]models.User, error) {
-	rows, err := r.db.Query(`
-		SELECT u.id, u.name, u.is_active 
-		FROM users u
-		INNER JOIN team_members tm ON u.id = tm.user_id
-		WHERE tm.team_name = $1
-		ORDER BY u.id
-	`, teamName)
-	if err != nil {
+	if err := memberRows.Err(); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var members []models.User
-	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.IsActive); err != nil {
-			return nil, err
-		}
-		members = append(members, user)
-	}
-	return members, rows.Err()
+	return teams, nil
 }
 
 func (r *TeamRepository) AddMember(teamName string, userID int) error {
@@ -174,7 +154,7 @@ func (r *TeamRepository) GetUserTeam(userID int) (string, error) {
 		"SELECT team_name FROM team_members WHERE user_id = $1 LIMIT 1",
 		userID,
 	).Scan(&teamName)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
 	return teamName, err

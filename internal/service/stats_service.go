@@ -19,7 +19,7 @@ func (s *StatsService) GetStats() (*dto.StatsResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
 	}
-	
+
 	return &dto.StatsResponse{
 		TotalUsers:  statsMap["total_users"],
 		ActiveUsers: statsMap["active_users"],

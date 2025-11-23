@@ -75,7 +75,7 @@ func (h *Handlers) GetTeam(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} models.Team
 // @Failure 500 {object} map[string]string
 // @Router /teams [get]
-func (h *Handlers) ListTeams(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ListTeams(w http.ResponseWriter, _ *http.Request) {
 	teams, err := h.teamService.GetAllTeams()
 	if err != nil {
 		h.respondError(w, http.StatusInternalServerError, err.Error())

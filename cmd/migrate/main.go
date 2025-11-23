@@ -1,7 +1,9 @@
+// Package main provides database migration utilities.
 package main
 
 import (
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -50,12 +52,12 @@ func main() {
 	}
 
 	if *up {
-		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 			log.Fatal(err)
 		}
 		fmt.Println("Migrations applied successfully")
 	} else if *down {
-		if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+		if err := m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 			log.Fatal(err)
 		}
 		fmt.Println("Migrations rolled back successfully")
@@ -64,4 +66,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-

@@ -2,9 +2,11 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
+	"errors"
 	"math/rand"
 	"time"
+
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 
 	"github.com/lib/pq"
 )
@@ -22,7 +24,7 @@ func (r *PRRepository) Create(pr *models.PR) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	err = tx.QueryRow(
 		"INSERT INTO pull_requests (title, author_id, status) VALUES ($1, $2, $3) RETURNING id",
@@ -52,7 +54,7 @@ func (r *PRRepository) GetByID(id int) (*models.PR, error) {
 		"SELECT id, title, author_id, status FROM pull_requests WHERE id = $1",
 		id,
 	).Scan(&pr.ID, &pr.Title, &pr.AuthorID, &pr.Status)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
@@ -212,28 +214,10 @@ func (r *PRRepository) GetAll() ([]models.PR, error) {
 		}
 	}
 
-	return prs, reviewerRows.Err()
-}
-
-func (r *PRRepository) getReviewers(prID int) ([]int, error) {
-	rows, err := r.db.Query(
-		"SELECT reviewer_id FROM pr_reviewers WHERE pr_id = $1 ORDER BY reviewer_id",
-		prID,
-	)
-	if err != nil {
+	if err := reviewerRows.Err(); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var reviewers []int
-	for rows.Next() {
-		var reviewerID int
-		if err := rows.Scan(&reviewerID); err != nil {
-			return nil, err
-		}
-		reviewers = append(reviewers, reviewerID)
-	}
-	return reviewers, rows.Err()
+	return prs, nil
 }
 
 func (r *PRRepository) UpdateStatus(id int, status models.PRStatus) error {
@@ -250,7 +234,7 @@ func (r *PRRepository) ReassignReviewer(prID int, oldReviewerID int, newReviewer
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Удаляем старого ревьювера
 	_, err = tx.Exec(
@@ -365,7 +349,7 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Получаем активных пользователей команды для переназначения
 	var candidates []int
@@ -402,6 +386,9 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 		}
 		candidates = append(candidates, candidateID)
 	}
+	if err := candidatesRows.Err(); err != nil {
+		return 0, err
+	}
 
 	if len(candidates) == 0 {
 		// Нет доступных кандидатов - просто удаляем ревьюверов
@@ -435,15 +422,19 @@ func (r *PRRepository) BulkReassignReviewers(prReviewerMap map[int][]int, teamNa
 		if err != nil {
 			return 0, err
 		}
+		defer func() {
+			_ = rows.Close()
+		}()
 		for rows.Next() {
 			var prID, authorID int
 			if err := rows.Scan(&prID, &authorID); err != nil {
-				rows.Close()
 				return 0, err
 			}
 			authorsMap[prID] = authorID
 		}
-		rows.Close()
+		if err := rows.Err(); err != nil {
+			return 0, err
+		}
 	}
 
 	// Переназначаем ревьюверов
