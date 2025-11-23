@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Ensure shell scripts always have LF endings (critical for Docker)
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
