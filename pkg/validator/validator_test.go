@@ -152,11 +152,11 @@ func TestFormatValidationErrors(t *testing.T) {
 	}
 
 	formatted := FormatValidationErrors(err)
-	
+
 	if formatted == "" {
 		t.Error("Expected formatted error message, got empty string")
 	}
-	
+
 	if len(formatted) < 10 {
 		t.Errorf("Expected detailed error message, got: %s", formatted)
 	}

@@ -1,4 +1,4 @@
-FROM golang:1.23.0-alpine AS builder
+FROM golang:1.24.0-alpine AS builder
 
 # Обновляем пакеты до последних версий с исправлениями безопасности
 RUN apk update && apk upgrade --no-cache && apk add --no-cache git
