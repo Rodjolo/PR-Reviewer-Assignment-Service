@@ -41,7 +41,7 @@ func (s *UserService) GetUser(id int) (*models.User, error) {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 	return user, nil
 }

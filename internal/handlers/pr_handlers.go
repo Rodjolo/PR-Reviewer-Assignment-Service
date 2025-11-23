@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/Rodjolo/pr-reviewer-service/internal/service"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/dto"
 	"github.com/gorilla/mux"
 )
@@ -30,11 +32,11 @@ func (h *Handlers) CreatePR(w http.ResponseWriter, r *http.Request) {
 
 	pr, err := h.prService.CreatePR(req.Title, req.AuthorID)
 	if err != nil {
-		if err.Error() == "author not found" || err.Error() == "author is not in any team" {
+		if errors.Is(err, service.ErrAuthorNotFound) || errors.Is(err, service.ErrAuthorNotInTeam) {
 			h.respondError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		h.respondError(w, http.StatusInternalServerError, err.Error())
+		h.respondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -61,11 +63,11 @@ func (h *Handlers) GetPR(w http.ResponseWriter, r *http.Request) {
 
 	pr, err := h.prService.GetPR(id)
 	if err != nil {
-		if err.Error() == "PR not found" {
+		if errors.Is(err, service.ErrPRNotFound) {
 			h.respondError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		h.respondError(w, http.StatusInternalServerError, err.Error())
+		h.respondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -93,7 +95,7 @@ func (h *Handlers) ListPRs(w http.ResponseWriter, r *http.Request) {
 
 		prs, err := h.prService.GetPRsByUserID(userID)
 		if err != nil {
-			h.respondError(w, http.StatusInternalServerError, err.Error())
+			h.respondError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
 		h.respondJSON(w, http.StatusOK, prs)
@@ -102,7 +104,7 @@ func (h *Handlers) ListPRs(w http.ResponseWriter, r *http.Request) {
 
 	prs, err := h.prService.GetAllPRs()
 	if err != nil {
-		h.respondError(w, http.StatusInternalServerError, err.Error())
+		h.respondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	h.respondJSON(w, http.StatusOK, prs)
@@ -138,15 +140,15 @@ func (h *Handlers) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 
 	pr, err := h.prService.ReassignReviewer(prID, req.OldReviewerID)
 	if err != nil {
-		if err.Error() == "PR not found" || err.Error() == "old reviewer is not assigned to this PR" || err.Error() == "reviewer is not in any team" || err.Error() == "no available reviewers in the team" {
+		if errors.Is(err, service.ErrPRNotFound) || errors.Is(err, service.ErrReviewerNotAssigned) || errors.Is(err, service.ErrReviewerNotInTeam) || errors.Is(err, service.ErrNoAvailableReviewers) {
 			h.respondError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		if err.Error() == "cannot reassign reviewer: PR is already merged" {
+		if errors.Is(err, service.ErrPRAlreadyMerged) {
 			h.respondError(w, http.StatusConflict, err.Error())
 			return
 		}
-		h.respondError(w, http.StatusInternalServerError, err.Error())
+		h.respondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -175,11 +177,11 @@ func (h *Handlers) MergePR(w http.ResponseWriter, r *http.Request) {
 
 	pr, err := h.prService.MergePR(id)
 	if err != nil {
-		if err.Error() == "PR not found" {
+		if errors.Is(err, service.ErrPRNotFound) {
 			h.respondError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		h.respondError(w, http.StatusInternalServerError, err.Error())
+		h.respondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 

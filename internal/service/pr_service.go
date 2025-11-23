@@ -1,12 +1,12 @@
 package service
 
 import (
-	"errors"
 	"fmt"
-	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
-	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 	"math/rand"
 	"time"
+
+	"github.com/Rodjolo/pr-reviewer-service/internal/repository"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 )
 
 type PRService struct {
@@ -30,7 +30,7 @@ func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
 		return nil, fmt.Errorf("failed to get author: %w", err)
 	}
 	if author == nil {
-		return nil, errors.New("author not found")
+		return nil, ErrAuthorNotFound
 	}
 
 	// Получаем команду автора
@@ -39,7 +39,7 @@ func (s *PRService) CreatePR(title string, authorID int) (*models.PR, error) {
 		return nil, fmt.Errorf("failed to get user team: %w", err)
 	}
 	if teamName == "" {
-		return nil, errors.New("author is not in any team")
+		return nil, ErrAuthorNotInTeam
 	}
 
 	// Получаем активных пользователей из команды (исключая автора)
@@ -97,7 +97,7 @@ func (s *PRService) GetPR(id int) (*models.PR, error) {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
 	if pr == nil {
-		return nil, errors.New("PR not found")
+		return nil, ErrPRNotFound
 	}
 	return pr, nil
 }
@@ -124,7 +124,7 @@ func (s *PRService) MergePR(id int) (*models.PR, error) {
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
 	if pr == nil {
-		return nil, errors.New("PR not found")
+		return nil, ErrPRNotFound
 	}
 
 	// Идемпотентность: если PR уже мержен, просто возвращаем его
@@ -147,12 +147,12 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
 	if pr == nil {
-		return nil, errors.New("PR not found")
+		return nil, ErrPRNotFound
 	}
 
 	// Проверяем статус PR
 	if pr.Status == models.PRStatusMerged {
-		return nil, errors.New("cannot reassign reviewer: PR is already merged")
+		return nil, ErrPRAlreadyMerged
 	}
 
 	// Проверяем, что старый ревьювер действительно назначен на этот PR
@@ -164,7 +164,7 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		}
 	}
 	if !found {
-		return nil, errors.New("old reviewer is not assigned to this PR")
+		return nil, ErrReviewerNotAssigned
 	}
 
 	// Получаем команду старого ревьювера
@@ -173,7 +173,7 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 		return nil, fmt.Errorf("failed to get reviewer team: %w", err)
 	}
 	if teamName == "" {
-		return nil, errors.New("reviewer is not in any team")
+		return nil, ErrReviewerNotInTeam
 	}
 
 	// Получаем активных пользователей из команды старого ревьювера (исключая его самого и автора PR)
@@ -201,7 +201,7 @@ func (s *PRService) ReassignReviewer(prID int, oldReviewerID int) (*models.PR, e
 	}
 
 	if len(filteredCandidates) == 0 {
-		return nil, errors.New("no available reviewers in the team")
+		return nil, ErrNoAvailableReviewers
 	}
 
 	// Выбираем случайного нового ревьювера

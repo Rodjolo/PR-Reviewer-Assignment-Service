@@ -44,7 +44,7 @@ func (s *TeamService) GetTeam(name string) (*models.Team, error) {
 		return nil, fmt.Errorf("failed to get team: %w", err)
 	}
 	if team == nil {
-		return nil, errors.New("team not found")
+		return nil, ErrTeamNotFound
 	}
 	return team, nil
 }
@@ -64,7 +64,7 @@ func (s *TeamService) AddMember(teamName string, userID int) (*models.Team, erro
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 
 	// Проверяем существование команды
@@ -97,7 +97,7 @@ func (s *TeamService) RemoveMember(teamName string, userID int) error {
 		return fmt.Errorf("failed to get team: %w", err)
 	}
 	if team == nil {
-		return errors.New("team not found")
+		return ErrTeamNotFound
 	}
 
 	// Удаляем участника
