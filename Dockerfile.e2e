@@ -1,0 +1,34 @@
+# Dockerfile для E2E тестов (изолированное окружение)
+FROM golang:1.24.0-alpine
+
+# Установка зависимостей
+RUN apk add --no-cache git curl bash
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем go.mod и go.sum
+COPY go.mod go.sum ./
+
+# Загружаем зависимости
+RUN go mod download
+
+# Копируем исходники
+COPY . .
+
+# Компилируем тесты
+RUN go test -c ./test/e2e -o e2e.test
+
+# Скрипт ожидания готовности API
+RUN echo '#!/bin/bash\n\
+echo "Waiting for API to be ready..."\n\
+until curl -f -s http://api-e2e:8080/stats > /dev/null 2>&1; do\n\
+  echo "API not ready, waiting..."\n\
+  sleep 2\n\
+done\n\
+echo "API is ready!"\n\
+echo "Running E2E tests..."\n\
+./e2e.test -test.v\n\
+' > /app/run-tests.sh && chmod +x /app/run-tests.sh
+
+CMD ["/app/run-tests.sh"]
