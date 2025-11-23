@@ -14,6 +14,7 @@ REST API сервис для автоматического назначения
 - **Миграции**: golang-migrate
 - **Валидация**: go-playground/validator/v10
 - **Моки**: mockery + testify/mock
+- **Нагрузочное тестирование**: bombardier
 
 ## Быстрый старт
 
