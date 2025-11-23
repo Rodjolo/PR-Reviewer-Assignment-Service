@@ -521,7 +521,7 @@ make generate-mocks
 ## Swagger документация
 
 После запуска сервиса Swagger UI доступен по адресу:
-- **http://localhost:8080/swagger/index.html**
+- **http://localhost:8081/swagger/index.html**
 
 Документация генерируется автоматически при сборке Docker образа. Для локальной разработки используйте:
 ```bash
