@@ -9,7 +9,7 @@ import (
 // @Description Возвращает статистику по пользователям, командам и PR'ам
 // @Tags Stats
 // @Produce json
-// @Success 200 {object} map[string]int
+// @Success 200 {object} dto.StatsResponse
 // @Failure 500 {object} map[string]string
 // @Router /stats [get]
 func (h *Handlers) GetStats(w http.ResponseWriter, r *http.Request) {

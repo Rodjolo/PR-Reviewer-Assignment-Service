@@ -19,5 +19,12 @@ type BulkDeactivateTeamResponse struct {
 	ReassignedPRs    int `json:"reassigned_prs"`
 }
 
-// Stats Response (используется map[string]int, но можно добавить структуру для типизации)
-type StatsResponse map[string]int
+// Stats Response
+type StatsResponse struct {
+	TotalUsers  int `json:"total_users"`
+	ActiveUsers int `json:"active_users"`
+	TotalTeams  int `json:"total_teams"`
+	TotalPRs    int `json:"total_prs"`
+	OpenPRs     int `json:"open_prs"`
+	MergedPRs   int `json:"merged_prs"`
+}

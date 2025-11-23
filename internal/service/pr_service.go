@@ -10,12 +10,12 @@ import (
 )
 
 type PRService struct {
-	prRepo   *repository.PRRepository
-	userRepo *repository.UserRepository
-	teamRepo *repository.TeamRepository
+	prRepo   repository.PRRepositoryInterface
+	userRepo repository.UserRepositoryInterface
+	teamRepo repository.TeamRepositoryInterface
 }
 
-func NewPRService(prRepo *repository.PRRepository, userRepo *repository.UserRepository, teamRepo *repository.TeamRepository) *PRService {
+func NewPRService(prRepo repository.PRRepositoryInterface, userRepo repository.UserRepositoryInterface, teamRepo repository.TeamRepositoryInterface) *PRService {
 	return &PRService{
 		prRepo:   prRepo,
 		userRepo: userRepo,

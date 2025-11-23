@@ -51,7 +51,13 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Server starting on port %s", port)
+	// Получаем внешний порт из переменной окружения (для Docker)
+	externalPort := os.Getenv("EXTERNAL_PORT")
+	if externalPort == "" {
+		externalPort = port
+	}
+
+	log.Printf("Server starting on port %s (external: %s)", port, externalPort)
 	
 	// Используем net.Listen для явного указания IPv4
 	listener, err := net.Listen("tcp4", "0.0.0.0:"+port)
@@ -59,7 +65,7 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	
-	log.Printf("Server listening on %s", listener.Addr().String())
+	log.Printf("Server listening on %s (accessible externally on port %s)", listener.Addr().String(), externalPort)
 	if err := http.Serve(listener, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

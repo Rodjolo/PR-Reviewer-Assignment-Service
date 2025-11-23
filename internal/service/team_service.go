@@ -8,11 +8,11 @@ import (
 )
 
 type TeamService struct {
-	teamRepo *repository.TeamRepository
-	userRepo *repository.UserRepository
+	teamRepo repository.TeamRepositoryInterface
+	userRepo repository.UserRepositoryInterface
 }
 
-func NewTeamService(teamRepo *repository.TeamRepository, userRepo *repository.UserRepository) *TeamService {
+func NewTeamService(teamRepo repository.TeamRepositoryInterface, userRepo repository.UserRepositoryInterface) *TeamService {
 	return &TeamService{
 		teamRepo: teamRepo,
 		userRepo: userRepo,

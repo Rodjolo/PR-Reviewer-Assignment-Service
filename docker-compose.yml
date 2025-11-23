@@ -24,6 +24,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pr_reviewer}?sslmode=disable
       PORT: ${PORT:-8080}
+      EXTERNAL_PORT: 8081
     depends_on:
       postgres:
         condition: service_healthy

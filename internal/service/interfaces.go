@@ -35,5 +35,5 @@ type TeamServiceInterface interface {
 
 // StatsServiceInterface определяет интерфейс для работы со статистикой
 type StatsServiceInterface interface {
-	GetStats() (map[string]int, error)
+	GetStats() (*dto.StatsResponse, error)
 }
