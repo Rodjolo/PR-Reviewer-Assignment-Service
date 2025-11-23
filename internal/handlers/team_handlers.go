@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Rodjolo/pr-reviewer-service/pkg/dto"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/validator"
 	"github.com/gorilla/mux"
 )
 
@@ -25,6 +26,11 @@ func (h *Handlers) CreateTeam(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateTeamRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := validator.Validate(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, validator.FormatValidationErrors(err))
 		return
 	}
 
@@ -104,6 +110,11 @@ func (h *Handlers) AddTeamMember(w http.ResponseWriter, r *http.Request) {
 	var req dto.AddMemberRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := validator.Validate(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, validator.FormatValidationErrors(err))
 		return
 	}
 

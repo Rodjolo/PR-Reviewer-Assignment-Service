@@ -65,6 +65,16 @@ swagger:
 	@which swag > /dev/null || (echo "Installing swag..." && go install github.com/swaggo/swag/cmd/swag@latest)
 	swag init -g cmd/server/main.go -o docs
 
+# Установка mockery для генерации моков
+install-mockery:
+	@echo "Installing mockery..."
+	@go install github.com/vektra/mockery/v2@latest
+
+# Генерация моков через mockery
+generate-mocks:
+	@echo "Generating mocks..."
+	@mockery
+
 # Установка bombardier для нагрузочного тестирования
 install-bombardier:
 	go install github.com/codesenberg/bombardier@latest

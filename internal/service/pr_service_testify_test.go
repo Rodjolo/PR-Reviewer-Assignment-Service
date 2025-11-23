@@ -3,15 +3,16 @@ package service
 import (
 	"testing"
 
+	"github.com/Rodjolo/pr-reviewer-service/mocks"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestCreatePR_WithMockery_Success(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	author := &models.User{ID: 1, Name: "Author", IsActive: true}
 	reviewers := []models.User{
@@ -44,9 +45,9 @@ func TestCreatePR_WithMockery_Success(t *testing.T) {
 }
 
 func TestCreatePR_WithMockery_AuthorNotFound(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	mockUser.On("GetByID", 999).Return(nil, nil)
 
@@ -61,9 +62,9 @@ func TestCreatePR_WithMockery_AuthorNotFound(t *testing.T) {
 }
 
 func TestCreatePR_WithMockery_InsufficientReviewers(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	author := &models.User{ID: 1, Name: "Author", IsActive: true}
 	onlyOneReviewer := []models.User{
@@ -86,9 +87,9 @@ func TestCreatePR_WithMockery_InsufficientReviewers(t *testing.T) {
 }
 
 func TestGetPR_WithMockery_Success(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	expectedPR := &models.PR{
 		ID:       1,
@@ -109,9 +110,9 @@ func TestGetPR_WithMockery_Success(t *testing.T) {
 }
 
 func TestGetPR_WithMockery_NotFound(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	mockPR.On("GetByID", 999).Return(nil, nil)
 
@@ -126,9 +127,9 @@ func TestGetPR_WithMockery_NotFound(t *testing.T) {
 }
 
 func TestMergePR_WithMockery_Success(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	existingPR := &models.PR{
 		ID:       1,
@@ -153,9 +154,9 @@ func TestMergePR_WithMockery_Success(t *testing.T) {
 }
 
 func TestMergePR_WithMockery_AlreadyMerged(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	mergedPR := &models.PR{
 		ID:       1,
@@ -178,9 +179,9 @@ func TestMergePR_WithMockery_AlreadyMerged(t *testing.T) {
 }
 
 func TestReassignReviewer_WithMockery_Success(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	existingPR := &models.PR{
 		ID:        1,
@@ -217,9 +218,9 @@ func TestReassignReviewer_WithMockery_Success(t *testing.T) {
 }
 
 func TestGetPRsByUserID_WithMockery_Success(t *testing.T) {
-	mockPR := new(MockPRRepository)
-	mockUser := new(MockUserRepository)
-	mockTeam := new(MockTeamRepository)
+	mockPR := mocks.NewMockPRRepositoryInterface(t)
+	mockUser := mocks.NewMockUserRepositoryInterface(t)
+	mockTeam := mocks.NewMockTeamRepositoryInterface(t)
 
 	expectedPRs := []models.PR{
 		{ID: 1, Title: "PR1", AuthorID: 1},

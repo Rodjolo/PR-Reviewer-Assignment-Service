@@ -64,3 +64,6 @@ Thumbs.db
 load_test_results.txt
 *.loadtest
 
+# Generated mocks
+mocks/mock_*.go
+

@@ -8,10 +8,12 @@ REST API сервис для автоматического назначения
 
 ## Технологии
 
-- **Язык**: Go 1.23
+- **Язык**: Go 1.24
 - **База данных**: PostgreSQL 15
 - **Роутинг**: gorilla/mux
 - **Миграции**: golang-migrate
+- **Валидация**: go-playground/validator/v10
+- **Моки**: mockery + testify/mock
 
 ## Быстрый старт
 
@@ -67,7 +69,9 @@ make run
 │   └── service/      # Бизнес-логика (с интерфейсами)
 ├── pkg/              # Публичные пакеты
 │   ├── models/       # Модели данных
-│   └── dto/          # Структуры запросов/ответов
+│   ├── dto/          # Структуры запросов/ответов
+│   └── validator/    # Валидация запросов
+├── mocks/            # Сгенерированные моки (не коммитятся)
 ├── migrations/       # SQL миграции
 ├── docker-compose.yml
 ├── Dockerfile
@@ -108,6 +112,38 @@ make run
 ### Swagger документация
 
 - `GET /swagger/index.html` - Интерактивная Swagger UI документация
+
+## Валидация запросов
+
+Все входящие данные автоматически валидируются с использованием `go-playground/validator/v10`.
+
+### Правила валидации
+
+**Pull Requests:**
+- `title`: обязательное поле, от 1 до 500 символов
+- `author_id`: обязательное поле, должно быть больше 0
+
+**Пользователи:**
+- `name`: обязательное поле, от 1 до 100 символов
+
+**Команды:**
+- `name`: обязательное поле, от 1 до 50 символов
+
+**Добавление участника:**
+- `user_id`: обязательное поле, должно быть больше 0
+
+**Переназначение ревьювера:**
+- `old_reviewer_id`: обязательное поле, должно быть больше 0
+
+### Формат ошибок валидации
+
+При ошибке валидации API возвращает статус `400 Bad Request` с понятным сообщением:
+
+```json
+{
+  "error": "title is required; author_id must be greater than 0"
+}
+```
 
 ## Правила назначения ревьюверов
 
@@ -298,6 +334,8 @@ cp .env.example .env
 - `make clean` - очистить бинарники и volumes
 - `make deps` - установить зависимости
 - `make swagger` - сгенерировать Swagger документацию
+- `make install-mockery` - установить mockery для генерации моков
+- `make generate-mocks` - сгенерировать моки из интерфейсов
 - `make install-bombardier` - установить bombardier для нагрузочного тестирования
 - `make load-test` - запустить нагрузочное тестирование (Linux/Mac)
 - `make load-test-win` - запустить нагрузочное тестирование (Windows)
@@ -424,10 +462,35 @@ go test -v ./test/e2e/... -timeout 30s
 
 ### Unit тесты
 
+Проект включает unit-тесты для service layer с покрытием 76.4%.
+
+**Запуск:**
 ```bash
 # Запуск всех тестов (включая unit)
 make test
+
+# Запуск только service layer тестов с покрытием
+go test ./internal/service/... -cover
 ```
+
+**Моки:**
+- Моки генерируются автоматически через [mockery](https://vektra.github.io/mockery/)
+- Находятся в директории `mocks/`
+- Генерируются из интерфейсов в `internal/repository/interfaces.go`
+
+**Генерация моков:**
+```bash
+# Установка mockery
+make install-mockery
+
+# Генерация моков
+make generate-mocks
+```
+
+**Конфигурация:**
+- Настройки mockery находятся в `.mockery.yaml`
+- Моки используют `testify/mock` для assertion'ов
+- Все моки включают expecter API для удобства
 
 ## Swagger документация
 

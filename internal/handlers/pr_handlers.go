@@ -8,6 +8,7 @@ import (
 
 	"github.com/Rodjolo/pr-reviewer-service/internal/service"
 	"github.com/Rodjolo/pr-reviewer-service/pkg/dto"
+	"github.com/Rodjolo/pr-reviewer-service/pkg/validator"
 	"github.com/gorilla/mux"
 )
 
@@ -27,6 +28,11 @@ func (h *Handlers) CreatePR(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreatePRRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := validator.Validate(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, validator.FormatValidationErrors(err))
 		return
 	}
 
@@ -135,6 +141,11 @@ func (h *Handlers) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	var req dto.ReassignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := validator.Validate(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, validator.FormatValidationErrors(err))
 		return
 	}
 

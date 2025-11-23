@@ -1,0 +1,10 @@
+with-expecter: true
+dir: "mocks"
+packages:
+  github.com/Rodjolo/pr-reviewer-service/internal/repository:
+    config:
+      outpkg: "mocks"
+    interfaces:
+      PRRepositoryInterface:
+      UserRepositoryInterface:
+      TeamRepositoryInterface:
